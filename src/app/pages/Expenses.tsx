@@ -68,18 +68,28 @@ export function ExpensesPage() {
   const totalExpenses = filteredExpenses?.reduce((sum: number, e: any) => sum + e.amount, 0) || 0;
 
   const exportToExcel = () => {
-    const data = filteredExpenses.map((e: any) => ({
-      'Truck ID': e.truck_id,
-      'Category': e.category,
-      'Amount ($)': e.amount,
-      'Date': e.date,
-      'Description': e.description
-    }));
+    try {
+      if (!filteredExpenses || !Array.isArray(filteredExpenses) || filteredExpenses.length === 0) {
+        alert(t('common.no_data') || 'Eksport qilish uchun ma\'lumot yo\'q');
+        return;
+      }
 
-    const worksheet = XLSX.utils.json_to_sheet(data);
-    const workbook = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(workbook, worksheet, 'Operational Expenses');
-    XLSX.writeFile(workbook, `Truk_Expenses_${new Date().toISOString().split('T')[0]}.xlsx`);
+      const data = filteredExpenses.map((e: any) => ({
+        'Truck ID': e.truck_id || '-',
+        'Category': e.category || '-',
+        'Amount ($)': e.amount || 0,
+        'Date': e.date || '-',
+        'Description': e.description || '-'
+      }));
+
+      const worksheet = XLSX.utils.json_to_sheet(data);
+      const workbook = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(workbook, worksheet, 'Operational Expenses');
+      XLSX.writeFile(workbook, `LogistikAI_Xarajatlar_${new Date().toISOString().split('T')[0]}.xlsx`);
+    } catch (error: any) {
+      console.error('Excel export error:', error);
+      alert('Eksportda xatolik yuz berdi: ' + error.message);
+    }
   };
 
   return (

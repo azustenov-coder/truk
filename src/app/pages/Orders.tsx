@@ -71,35 +71,45 @@ export function OrdersPage() {
   });
 
   const exportToExcel = () => {
-    const data = filteredLoads.map((load: any) => ({
-      [t('orders.load_id')]: load.loadId,
-      [t('orders.customer')]: load.customer,
-      [t('orders.origin')]: load.origin_city,
-      [t('orders.destination')]: load.dest_city,
-      [t('common.status')]: load.status,
-      [t('orders.driver')]: load.driver_name || t('orders.unassigned'),
-      [t('orders.price')]: load.price,
-      [t('orders.eta')]: load.eta
-    }));
-
-    const worksheet = XLSX.utils.json_to_sheet(data);
+    // DIAGNOSTIC ALERT
+    console.log('exportToExcel triggered');
     
-    // AutoFit columns
-    const maxWidths = data.reduce((acc: any, row: any) => {
-      Object.keys(row).forEach((key, i) => {
-        const val = row[key] ? row[key].toString() : '';
-        const width = Math.max(acc[i] || 10, val.length + 2, key.length + 2);
-        acc[i] = width;
-      });
-      return acc;
-    }, []);
-    worksheet['!cols'] = maxWidths.map((w: number) => ({ wch: w }));
+    try {
+      if (typeof XLSX === 'undefined') {
+        alert('Xatolik: XLSX kutubxonasi topilmadi!');
+        return;
+      }
 
-    const workbook = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(workbook, worksheet, t('sidebar.orders'));
-    
-    // Robust download using XLSX.writeFile
-    XLSX.writeFile(workbook, `Truk_Buyurtmalar_${new Date().toISOString().split('T')[0]}.xlsx`);
+      if (!filteredLoads || !Array.isArray(filteredLoads) || filteredLoads.length === 0) {
+        alert('Ma\'lumot topilmadi (Yuklar soni: 0). Iltimos, ma\'lumotlar yuklanishini kuting.');
+        return;
+      }
+
+      console.log('Exporting loads count:', filteredLoads.length);
+
+      const data = filteredLoads.map((load: any) => ({
+        'ID': load.loadId || load.id || '-',
+        'Mijoz': load.customer || '-',
+        'Yuborish': load.origin_city || '-',
+        'Qabul qilish': load.dest_city || '-',
+        'Holat': load.status || '-',
+        'Haydovchi': load.driver_name || '-',
+        'Narxi': load.price || 0,
+        'Vaqti': load.eta || '-'
+      }));
+
+      const worksheet = XLSX.utils.json_to_sheet(data);
+      const workbook = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(workbook, worksheet, 'Buyurtmalar');
+      
+      XLSX.writeFile(workbook, `LogistikAI_Export_${new Date().toISOString().split('T')[0]}.xlsx`);
+      
+      // DIAGNOSTIC SUCCESS
+      setTimeout(() => alert('Eksport yakunlandi. Faylni yuklab olish papkangizdan qidiring.'), 500);
+    } catch (error: any) {
+      console.error('Excel export error:', error);
+      alert('Eksportda xatolik yuz berdi: ' + error.message);
+    }
   };
 
   return (

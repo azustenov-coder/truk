@@ -246,33 +246,42 @@ export function DriversPage() {
   };
 
   const exportToExcel = () => {
-    const data = filteredDrivers.map((d: any) => ({
-      [t('drivers.name')]: d.name,
-      [t('common.status')]: t(`common.${d.status.toLowerCase().replace(' ', '_')}`),
-      [t('drivers.license')]: d.license,
-      [t('drivers.rating')]: d.rating,
-      [t('drivers.location')]: d.currentLocation,
-      [t('drivers.phone')]: d.phone
-    }));
+    try {
+      if (!filteredDrivers || !Array.isArray(filteredDrivers) || filteredDrivers.length === 0) {
+        alert(t('drivers.no_drivers') || 'Eksport qilish uchun haydovchilar yo\'q');
+        return;
+      }
 
-    const worksheet = XLSX.utils.json_to_sheet(data);
-    
-    // AutoFit columns
-    const maxWidths = data.reduce((acc: any, row: any) => {
-      Object.keys(row).forEach((key, i) => {
-        const val = row[key] ? row[key].toString() : '';
-        const width = Math.max(acc[i] || 10, val.length + 2, key.length + 2);
-        acc[i] = width;
-      });
-      return acc;
-    }, []);
-    worksheet['!cols'] = maxWidths.map((w: number) => ({ wch: w }));
+      const data = filteredDrivers.map((d: any) => ({
+        [t('drivers.name') || 'Ism']: d.name || '-',
+        [t('common.status') || 'Holat']: d.status || '-',
+        [t('drivers.license') || 'Litsenziya']: d.license || '-',
+        [t('drivers.rating') || 'Reyting']: d.rating || '-',
+        [t('drivers.location') || 'Manzil']: d.currentLocation || '-',
+        [t('drivers.phone') || 'Telefon']: d.phone || '-'
+      }));
 
-    const workbook = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(workbook, worksheet, t('sidebar.drivers'));
-    
-    // Robust download using XLSX.writeFile
-    XLSX.writeFile(workbook, `Truk_Haydovchilar_${new Date().toISOString().split('T')[0]}.xlsx`);
+      const worksheet = XLSX.utils.json_to_sheet(data);
+      
+      // AutoFit columns
+      const maxWidths = data.reduce((acc: any, row: any) => {
+        Object.keys(row).forEach((key, i) => {
+          const val = row[key] ? row[key].toString() : '';
+          const width = Math.max(acc[i] || 10, val.length + 2, key.length + 2);
+          acc[i] = width;
+        });
+        return acc;
+      }, []);
+      worksheet['!cols'] = maxWidths.map((w: number) => ({ wch: w }));
+
+      const workbook = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(workbook, worksheet, t('sidebar.drivers') || 'Drivers');
+      
+      XLSX.writeFile(workbook, `LogistikAI_Haydovchilar_${new Date().toISOString().split('T')[0]}.xlsx`);
+    } catch (error: any) {
+      console.error('Excel export error:', error);
+      alert('Eksportda xatolik yuz berdi: ' + error.message);
+    }
   };
 
   return (
