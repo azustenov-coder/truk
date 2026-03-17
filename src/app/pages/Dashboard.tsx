@@ -273,7 +273,6 @@ export function DashboardPage() {
                <Dialog>
                 <DialogTrigger asChild>
                   <button className="bg-blue-600 dark:bg-blue-500 hover:scale-[1.02] active:scale-[0.98] text-white rounded-3xl flex flex-col items-center justify-center gap-3 transition-all p-6 shadow-xl shadow-blue-500/20">
-                    <Plus size={32} />
                     <span className="text-[11px] font-black uppercase tracking-widest">{t('dashboard.quick_command.create_load')}</span>
                   </button>
                 </DialogTrigger>

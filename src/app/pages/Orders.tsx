@@ -146,7 +146,6 @@ export function OrdersPage() {
             <Dialog>
               <DialogTrigger asChild>
                 <button className="flex items-center gap-2 px-4 py-2 bg-[#2563EB] text-white rounded-lg hover:bg-[#1d4ed8] transition-colors shadow-sm font-medium">
-                  <Plus size={16} />
                   {t('header.create_load')}
                 </button>
               </DialogTrigger>
