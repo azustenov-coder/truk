@@ -199,21 +199,22 @@ app.get('/api/loads', (req: Request, res: Response) => {
 
 // POST /api/loads - Create new load
 app.post('/api/loads', (req: Request, res: Response) => {
-  const { customer, origin, destination, eta, price } = req.body;
+  const { customer, origin, destination, eta, price, cargo_type } = req.body;
   const loadId = `LD-2024-${Math.floor(Math.random() * 10000).toString().padStart(4, '0')}`;
   
   try {
     const info = db.prepare(`
-      INSERT INTO loads (loadId, customer, origin_city, origin_state, origin_location, dest_city, dest_state, dest_location, eta, status, price)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      INSERT INTO loads (loadId, customer, origin_city, origin_state, origin_location, dest_city, dest_state, dest_location, eta, status, price, cargo_type)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     `).run(
       loadId, 
       customer, 
-      origin.city, origin.state, origin.location, 
-      destination.city, destination.state, destination.location, 
+      origin.city, origin.state, origin.location || 'Main Hub', 
+      destination.city, destination.state, destination.location || 'Main DC', 
       eta, 
       'PENDING',
-      price || 1200
+      price || 1200,
+      cargo_type || 'General'
     );
     
     const newLoad = db.prepare('SELECT * FROM loads WHERE id = ?').get(info.lastInsertRowid) as any;

@@ -21,6 +21,7 @@ db.exec(`
     driver_name TEXT,
     driver_id TEXT,
     price REAL DEFAULT 0,
+    cargo_type TEXT DEFAULT 'General',
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP
   )
 `);

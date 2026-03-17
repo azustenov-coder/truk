@@ -55,13 +55,24 @@ export function OrdersPage() {
   const filteredLoads = loads;
 
   // Create Load Mutation
-  const [newLoad, setNewLoad] = useState({
+  const [newLoad, setNewLoad] = useState<any>({
     customer: '',
     origin: { city: '', state: '', location: 'Main Hub' },
     destination: { city: '', state: '', location: 'Main DC' },
-    eta: '2024-03-20',
-    price: 1500
+    eta: new Date().toISOString().split('T')[0],
+    price: 1500,
+    cargo_type: 'General'
   });
+
+  const cargoCategories = [
+    { id: 'General', label: 'Umumiy yuklar' },
+    { id: 'Food', label: 'Oziq-ovqat' },
+    { id: 'Equipment', label: 'Texnika/Uskunalar' },
+    { id: 'Construction', label: 'Qurilish mollari' },
+    { id: 'Chemicals', label: 'Kimyoviy moddalar' },
+    { id: 'Textile', label: 'To\'qimachilik' },
+    { id: 'Other', label: 'Boshqa' }
+  ];
 
   const createLoadMutation = useMutation({
     mutationFn: (load: any) => axios.post('/api/loads', load),
@@ -139,35 +150,102 @@ export function OrdersPage() {
                   {t('header.create_load')}
                 </button>
               </DialogTrigger>
-              <DialogContent className="sm:max-w-[550px]">
+              <DialogContent className="sm:max-w-[600px] max-h-[90vh] overflow-y-auto">
                 <DialogHeader>
                   <DialogTitle className="text-xl">+ {t('header.create_load')}</DialogTitle>
                 </DialogHeader>
-                <div className="grid gap-4 py-4">
+                <div className="grid gap-6 py-4">
                   <div className="grid grid-cols-2 gap-4">
                     <div className="grid gap-2">
-                      <label className="text-sm font-semibold text-gray-700 dark:text-gray-300">{t('dashboard.modals.customer')}</label>
+                      <label className="text-sm font-bold text-gray-700 dark:text-gray-300">{t('dashboard.modals.customer')}</label>
                       <input 
-                        placeholder={t('dashboard.modals.customer')} 
-                        className="px-3 py-2.5 bg-gray-50 dark:bg-[#1E293B] border border-gray-200 dark:border-gray-700 rounded-lg text-sm focus:ring-2 focus:ring-blue-500" 
+                        placeholder="Mijoz nomi" 
+                        className="px-3 py-2.5 bg-gray-50 dark:bg-[#0F172A] border border-gray-200 dark:border-gray-700 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none" 
                         onChange={(e) => setNewLoad({...newLoad, customer: e.target.value})}
                       />
                     </div>
                     <div className="grid gap-2">
-                      <label className="text-sm font-semibold text-gray-700 dark:text-gray-300">{t('dashboard.modals.rate')}</label>
+                      <label className="text-sm font-bold text-gray-700 dark:text-gray-300">Yuk turi (Kategoriya)</label>
+                      <select 
+                        className="px-3 py-2.5 bg-gray-50 dark:bg-[#0F172A] border border-gray-200 dark:border-gray-700 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none" 
+                        onChange={(e) => setNewLoad({...newLoad, cargo_type: e.target.value})}
+                      >
+                        {cargoCategories.map(cat => (
+                          <option key={cat.id} value={cat.id}>{cat.label}</option>
+                        ))}
+                      </select>
+                    </div>
+                  </div>
+
+                  <div className="space-y-4 p-4 bg-gray-50 dark:bg-[#0F172A] rounded-xl border border-gray-100 dark:border-gray-800">
+                    <h3 className="text-xs font-black uppercase tracking-widest text-blue-600">Yuborish (Origin)</h3>
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="grid gap-2">
+                        <label className="text-xs font-semibold text-gray-500">Shahar</label>
+                        <input 
+                          placeholder="Toshkent" 
+                          className="px-3 py-2 bg-white dark:bg-[#1E293B] border border-gray-200 dark:border-gray-700 rounded-lg text-sm outline-none" 
+                          onChange={(e) => setNewLoad({...newLoad, origin: {...newLoad.origin, city: e.target.value}})}
+                        />
+                      </div>
+                      <div className="grid gap-2">
+                        <label className="text-xs font-semibold text-gray-500">Viloyat/Shtat</label>
+                        <input 
+                          placeholder="UZB" 
+                          className="px-3 py-2 bg-white dark:bg-[#1E293B] border border-gray-200 dark:border-gray-700 rounded-lg text-sm outline-none" 
+                          onChange={(e) => setNewLoad({...newLoad, origin: {...newLoad.origin, state: e.target.value}})}
+                        />
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="space-y-4 p-4 bg-gray-50 dark:bg-[#0F172A] rounded-xl border border-gray-100 dark:border-gray-800">
+                    <h3 className="text-xs font-black uppercase tracking-widest text-green-600">Qabul qilish (Destination)</h3>
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="grid gap-2">
+                        <label className="text-xs font-semibold text-gray-500">Shahar</label>
+                        <input 
+                          placeholder="Samarqand" 
+                          className="px-3 py-2 bg-white dark:bg-[#1E293B] border border-gray-200 dark:border-gray-700 rounded-lg text-sm outline-none" 
+                          onChange={(e) => setNewLoad({...newLoad, destination: {...newLoad.destination, city: e.target.value}})}
+                        />
+                      </div>
+                      <div className="grid gap-2">
+                        <label className="text-xs font-semibold text-gray-500">Viloyat/Shtat</label>
+                        <input 
+                          placeholder="UZB" 
+                          className="px-3 py-2 bg-white dark:bg-[#1E293B] border border-gray-200 dark:border-gray-700 rounded-lg text-sm outline-none" 
+                          onChange={(e) => setNewLoad({...newLoad, destination: {...newLoad.destination, state: e.target.value}})}
+                        />
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="grid gap-2">
+                      <label className="text-sm font-bold text-gray-700 dark:text-gray-300">Yetkazish sanasi (ETA)</label>
+                      <input 
+                        type="date"
+                        className="px-3 py-2.5 bg-gray-50 dark:bg-[#0F172A] border border-gray-200 dark:border-gray-700 rounded-lg text-sm outline-none" 
+                        onChange={(e) => setNewLoad({...newLoad, eta: e.target.value})}
+                        defaultValue={newLoad.eta}
+                      />
+                    </div>
+                    <div className="grid gap-2">
+                      <label className="text-sm font-bold text-gray-700 dark:text-gray-300">{t('dashboard.modals.rate')}</label>
                       <input 
                         type="number"
                         placeholder="1500" 
-                        className="px-3 py-2.5 bg-gray-50 dark:bg-[#1E293B] border border-gray-200 dark:border-gray-700 rounded-lg text-sm focus:ring-2 focus:ring-blue-500" 
+                        className="px-3 py-2.5 bg-gray-50 dark:bg-[#0F172A] border border-gray-200 dark:border-gray-700 rounded-lg text-sm outline-none" 
                         onChange={(e) => setNewLoad({...newLoad, price: Number(e.target.value)})}
                       />
                     </div>
                   </div>
                 </div>
-                <DialogFooter className="mt-2 text-right">
+                <DialogFooter className="mt-4">
                   <DialogClose asChild>
                     <button 
-                      className="px-5 py-2.5 bg-[#2563EB] text-white rounded-lg font-semibold"
+                      className="w-full py-3 bg-[#2563EB] text-white rounded-xl font-bold hover:bg-[#1d4ed8] transition-all shadow-lg active:scale-95"
                       onClick={() => createLoadMutation.mutate(newLoad)}
                     >
                       {t('common.save')}
