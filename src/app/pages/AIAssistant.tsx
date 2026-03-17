@@ -7,8 +7,10 @@ import {
   DollarSign,
   FileText
 } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 
 export function AIAssistantPage() {
+  const { t } = useTranslation();
   return (
     <div className="flex flex-col h-full bg-gray-50 dark:bg-[#0F172A]">
       {/* Page Header */}
@@ -17,7 +19,7 @@ export function AIAssistantPage() {
           <div className="bg-orange-50 dark:bg-orange-900/20 border border-orange-200 dark:border-orange-900/50 rounded-lg p-3 flex items-start gap-3">
             <AlertTriangle size={20} className="text-orange-500 flex-shrink-0 mt-0.5" />
             <p className="text-sm font-medium text-orange-800 dark:text-orange-300">
-              AI assists operations. It does not auto-dispatch, move loads, or execute financial actions. All decisions remain human-controlled.
+              {t('ai_assistant.disclaimer')}
             </p>
           </div>
         </div>
@@ -25,20 +27,20 @@ export function AIAssistantPage() {
         <div className="flex items-center justify-between">
           <div>
             <h1 className="text-2xl font-bold tracking-tight text-gray-900 dark:text-white uppercase">
-              AI Ops Assistant
+              {t('ai_assistant.title')}
             </h1>
             <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
-              Decision Support & Operational Insights
+              {t('ai_assistant.subtitle')}
             </p>
           </div>
           <div className="flex items-center gap-3">
             <button className="flex items-center gap-2 px-4 py-2 border border-gray-200 dark:border-gray-700 rounded-lg text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors">
               <History size={16} />
-              View History
+              {t('ai_assistant.view_history')}
             </button>
             <button className="flex items-center gap-2 px-4 py-2 bg-[#2563EB] text-white rounded-lg text-sm font-medium hover:bg-blue-700 transition-colors">
               <SettingsIcon size={16} />
-              AI Settings
+              {t('ai_assistant.settings')}
             </button>
           </div>
         </div>
@@ -56,8 +58,8 @@ export function AIAssistantPage() {
                   <UserCircle size={18} className="text-blue-500" />
                 </div>
                 <div>
-                  <h2 className="text-base font-semibold text-gray-900 dark:text-white">Driver-Truck Suggestions</h2>
-                  <p className="text-xs text-gray-500 dark:text-gray-400 bg-gray-100 dark:bg-gray-800 px-2 py-0.5 rounded-full inline-block mt-1">Data Source: Dispatch</p>
+                  <h2 className="text-base font-semibold text-gray-900 dark:text-white">{t('ai_assistant.driver_suggestions.title')}</h2>
+                  <p className="text-xs text-gray-500 dark:text-gray-400 bg-gray-100 dark:bg-gray-800 px-2 py-0.5 rounded-full inline-block mt-1">{t('ai_assistant.driver_suggestions.data_source')}</p>
                 </div>
               </div>
             </div>
@@ -66,18 +68,18 @@ export function AIAssistantPage() {
               {/* Suggestion 1 */}
               <div className="p-5">
                 <div className="flex items-center justify-between mb-2">
-                  <h3 className="text-sm font-semibold text-gray-900 dark:text-white flex items-center gap-2">
+                   <h3 className="text-sm font-semibold text-gray-900 dark:text-white flex items-center gap-2">
                     Michael Rodriguez → Truck T-247
-                    <span className="px-2 py-0.5 rounded-full bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400 text-xs font-medium">High</span>
+                    <span className="px-2 py-0.5 rounded-full bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400 text-xs font-medium">{t('common.high')}</span>
                   </h3>
                 </div>
                 <p className="text-sm text-gray-500 dark:text-gray-400 mb-3">
-                  Route compatibility: 98% | HOS: Available | Performance: 4.9/5
+                  {t('ai_assistant.driver_suggestions.route_compatibility')}: 98% | {t('ai_assistant.driver_suggestions.hos')}: Available | {t('ai_assistant.driver_suggestions.performance')}: 4.9/5
                 </p>
                 <div className="flex gap-2">
-                  <button onClick={() => alert('Accepted Truck T-247 for Michael Rodriguez')} className="px-3 py-1.5 bg-green-500 text-white rounded-lg font-medium text-xs hover:bg-green-600 transition-colors">Accept</button>
-                  <button onClick={() => alert('Dismissed suggestion')} className="px-3 py-1.5 bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-lg font-medium text-xs hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors">Dismiss</button>
-                  <button onClick={() => alert('Override dialog opened')} className="px-3 py-1.5 bg-yellow-500 text-white rounded-lg font-medium text-xs hover:bg-yellow-600 transition-colors">Override</button>
+                  <button onClick={() => alert('Accepted Truck T-247 for Michael Rodriguez')} className="px-3 py-1.5 bg-green-500 text-white rounded-lg font-medium text-xs hover:bg-green-600 transition-colors">{t('common.active')}</button>
+                  <button onClick={() => alert('Dismissed suggestion')} className="px-3 py-1.5 bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-lg font-medium text-xs hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors">{t('common.cancel')}</button>
+                  <button onClick={() => alert('Override dialog opened')} className="px-3 py-1.5 bg-yellow-500 text-white rounded-lg font-medium text-xs hover:bg-yellow-600 transition-colors">{t('fleet.reassign')}</button>
                 </div>
               </div>
 
@@ -93,9 +95,9 @@ export function AIAssistantPage() {
                   Route compatibility: 87% | HOS: 8h remaining | Performance: 4.7/5
                 </p>
                 <div className="flex gap-2">
-                  <button onClick={() => alert('Accepted Truck T-189 for Jennifer Chen')} className="px-3 py-1.5 bg-green-500 text-white rounded-lg font-medium text-xs hover:bg-green-600 transition-colors">Accept</button>
-                  <button onClick={() => alert('Dismissed suggestion')} className="px-3 py-1.5 bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-lg font-medium text-xs hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors">Dismiss</button>
-                  <button onClick={() => alert('Override dialog opened')} className="px-3 py-1.5 bg-yellow-500 text-white rounded-lg font-medium text-xs hover:bg-yellow-600 transition-colors">Override</button>
+                  <button onClick={() => alert('Accepted Truck T-189 for Jennifer Chen')} className="px-3 py-1.5 bg-green-500 text-white rounded-lg font-medium text-xs hover:bg-green-600 transition-colors">{t('common.active')}</button>
+                  <button onClick={() => alert('Dismissed suggestion')} className="px-3 py-1.5 bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-lg font-medium text-xs hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors">{t('common.cancel')}</button>
+                  <button onClick={() => alert('Override dialog opened')} className="px-3 py-1.5 bg-yellow-500 text-white rounded-lg font-medium text-xs hover:bg-yellow-600 transition-colors">{t('fleet.reassign')}</button>
                 </div>
               </div>
 
@@ -111,9 +113,9 @@ export function AIAssistantPage() {
                   Route compatibility: 72% | HOS: Limited | Performance: 4.5/5
                 </p>
                 <div className="flex gap-2">
-                  <button onClick={() => alert('Accepted Truck T-156 for David Thompson')} className="px-3 py-1.5 bg-green-500 text-white rounded-lg font-medium text-xs hover:bg-green-600 transition-colors">Accept</button>
-                  <button onClick={() => alert('Dismissed suggestion')} className="px-3 py-1.5 bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-lg font-medium text-xs hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors">Dismiss</button>
-                  <button onClick={() => alert('Override dialog opened')} className="px-3 py-1.5 bg-yellow-500 text-white rounded-lg font-medium text-xs hover:bg-yellow-600 transition-colors">Override</button>
+                  <button onClick={() => alert('Accepted Truck T-156 for David Thompson')} className="px-3 py-1.5 bg-green-500 text-white rounded-lg font-medium text-xs hover:bg-green-600 transition-colors">{t('common.active')}</button>
+                  <button onClick={() => alert('Dismissed suggestion')} className="px-3 py-1.5 bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-lg font-medium text-xs hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors">{t('common.cancel')}</button>
+                  <button onClick={() => alert('Override dialog opened')} className="px-3 py-1.5 bg-yellow-500 text-white rounded-lg font-medium text-xs hover:bg-yellow-600 transition-colors">{t('fleet.reassign')}</button>
                 </div>
               </div>
             </div>
@@ -127,8 +129,8 @@ export function AIAssistantPage() {
                   <AlertCircle size={18} className="text-red-500" />
                 </div>
                 <div>
-                  <h2 className="text-base font-semibold text-gray-900 dark:text-white">Delay Risk Alerts</h2>
-                  <p className="text-xs text-gray-500 dark:text-gray-400 bg-gray-100 dark:bg-gray-800 px-2 py-0.5 rounded-full inline-block mt-1">Data Source: Routes</p>
+                  <h2 className="text-base font-semibold text-gray-900 dark:text-white">{t('ai_assistant.delay_alerts.title')}</h2>
+                  <p className="text-xs text-gray-500 dark:text-gray-400 bg-gray-100 dark:bg-gray-800 px-2 py-0.5 rounded-full inline-block mt-1">{t('ai_assistant.delay_alerts.data_source')}</p>
                 </div>
               </div>
             </div>
@@ -139,7 +141,7 @@ export function AIAssistantPage() {
                 <div className="flex items-start justify-between mb-2">
                   <h3 className="text-sm font-semibold text-gray-900 dark:text-white flex items-center gap-2">
                     Route 15 - Chicago to Detroit
-                    <span className="px-2 py-0.5 rounded-full bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400 text-xs font-medium">High Risk</span>
+                    <span className="px-2 py-0.5 rounded-full bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400 text-xs font-medium">{t('ai_assistant.delay_alerts.high_risk')}</span>
                   </h3>
                   <span className="text-xs font-medium text-gray-500 dark:text-gray-400">2-4 hours</span>
                 </div>
@@ -147,9 +149,9 @@ export function AIAssistantPage() {
                   Heavy snow forecast, construction delays, HOS approaching limit
                 </p>
                 <div className="flex gap-2">
-                  <button onClick={() => alert('Initiating reroute for Route 15...')} className="px-3 py-1.5 bg-[#2563EB] text-white rounded-lg font-medium text-xs hover:bg-[#1d4ed8] transition-colors">Reroute</button>
-                  <button onClick={() => alert('Customer notified about Delay on Route 15')} className="px-3 py-1.5 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 bg-white dark:bg-[#1E293B] rounded-lg font-medium text-xs hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors">Notify Customer</button>
-                  <button onClick={() => alert('Alert dismissed')} className="px-3 py-1.5 bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-lg font-medium text-xs hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors">Dismiss</button>
+                  <button onClick={() => alert('Initiating reroute for Route 15...')} className="px-3 py-1.5 bg-[#2563EB] text-white rounded-lg font-medium text-xs hover:bg-[#1d4ed8] transition-colors">{t('ai_assistant.delay_alerts.reroute')}</button>
+                  <button onClick={() => alert('Customer notified about Delay on Route 15')} className="px-3 py-1.5 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 bg-white dark:bg-[#1E293B] rounded-lg font-medium text-xs hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors">{t('ai_assistant.delay_alerts.notify_customer')}</button>
+                  <button onClick={() => alert('Alert dismissed')} className="px-3 py-1.5 bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-lg font-medium text-xs hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors">{t('common.cancel')}</button>
                 </div>
               </div>
 
@@ -166,8 +168,8 @@ export function AIAssistantPage() {
                   Traffic congestion during peak hours, fuel stop required
                 </p>
                 <div className="flex gap-2">
-                  <button onClick={() => alert('Schedule adjusted for Route 7')} className="px-3 py-1.5 bg-[#2563EB] text-white rounded-lg font-medium text-xs hover:bg-[#1d4ed8] transition-colors">Adjust Schedule</button>
-                  <button onClick={() => alert('Alert dismissed')} className="px-3 py-1.5 bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-lg font-medium text-xs hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors">Dismiss</button>
+                  <button onClick={() => alert('Schedule adjusted for Route 7')} className="px-3 py-1.5 bg-[#2563EB] text-white rounded-lg font-medium text-xs hover:bg-[#1d4ed8] transition-colors">{t('ai_assistant.delay_alerts.reroute')}</button>
+                  <button onClick={() => alert('Alert dismissed')} className="px-3 py-1.5 bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-lg font-medium text-xs hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors">{t('common.cancel')}</button>
                 </div>
               </div>
 
@@ -184,7 +186,7 @@ export function AIAssistantPage() {
                   Minor weather conditions, all systems normal
                 </p>
                 <div className="flex gap-2">
-                  <button onClick={() => alert('Alert dismissed')} className="px-3 py-1.5 bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-lg font-medium text-xs hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors">Dismiss</button>
+                  <button onClick={() => alert('Alert dismissed')} className="px-3 py-1.5 bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-lg font-medium text-xs hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors">{t('common.cancel')}</button>
                 </div>
               </div>
             </div>
@@ -198,8 +200,8 @@ export function AIAssistantPage() {
                   <DollarSign size={18} className="text-yellow-600" />
                 </div>
                 <div>
-                  <h2 className="text-base font-semibold text-gray-900 dark:text-white">Cost Leak Detection</h2>
-                  <p className="text-xs text-gray-500 dark:text-gray-400 bg-gray-100 dark:bg-gray-800 px-2 py-0.5 rounded-full inline-block mt-1">Data Source: Fleet</p>
+                  <h2 className="text-base font-semibold text-gray-900 dark:text-white">{t('ai_assistant.cost_leak.title')}</h2>
+                  <p className="text-xs text-gray-500 dark:text-gray-400 bg-gray-100 dark:bg-gray-800 px-2 py-0.5 rounded-full inline-block mt-1">{t('ai_assistant.cost_leak.data_source')}</p>
                 </div>
               </div>
             </div>
@@ -217,9 +219,9 @@ export function AIAssistantPage() {
                   15% above fleet average, aggressive driving patterns detected
                 </p>
                 <div className="flex gap-2">
-                  <button onClick={() => alert('Driver Training Assigned')} className="px-3 py-1.5 bg-[#2563EB] text-white rounded-lg font-medium text-xs hover:bg-blue-700 transition-colors">Driver Training</button>
-                  <button onClick={() => alert('Route Optimization initiated')} className="px-3 py-1.5 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 bg-white dark:bg-[#1E293B] rounded-lg font-medium text-xs hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors">Route Optimization</button>
-                  <button onClick={() => alert('Dismissed')} className="px-3 py-1.5 bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-lg font-medium text-xs hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors">Dismiss</button>
+                  <button onClick={() => alert('Driver Training Assigned')} className="px-3 py-1.5 bg-[#2563EB] text-white rounded-lg font-medium text-xs hover:bg-blue-700 transition-colors">{t('ai_assistant.cost_leak.driver_training')}</button>
+                  <button onClick={() => alert('Route Optimization initiated')} className="px-3 py-1.5 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 bg-white dark:bg-[#1E293B] rounded-lg font-medium text-xs hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors">{t('ai_assistant.cost_leak.route_optimization')}</button>
+                  <button onClick={() => alert('Dismissed')} className="px-3 py-1.5 bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-lg font-medium text-xs hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors">{t('common.cancel')}</button>
                 </div>
               </div>
 
@@ -235,8 +237,8 @@ export function AIAssistantPage() {
                   23% empty miles, backhaul opportunities missed
                 </p>
                 <div className="flex gap-2">
-                  <button onClick={() => alert('Searching for Backhauls...')} className="px-3 py-1.5 bg-[#2563EB] text-white rounded-lg font-medium text-xs hover:bg-blue-700 transition-colors">Find Backhaul</button>
-                  <button onClick={() => alert('Dismissed')} className="px-3 py-1.5 bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-lg font-medium text-xs hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors">Dismiss</button>
+                  <button onClick={() => alert('Searching for Backhauls...')} className="px-3 py-1.5 bg-[#2563EB] text-white rounded-lg font-medium text-xs hover:bg-blue-700 transition-colors">{t('ai_assistant.cost_leak.find_backhaul')}</button>
+                  <button onClick={() => alert('Dismissed')} className="px-3 py-1.5 bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-lg font-medium text-xs hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors">{t('common.cancel')}</button>
                 </div>
               </div>
 
@@ -267,8 +269,8 @@ export function AIAssistantPage() {
                   <FileText size={18} className="text-green-500" />
                 </div>
                 <div>
-                  <h2 className="text-base font-semibold text-gray-900 dark:text-white">Invoice & Billing Anomalies</h2>
-                  <p className="text-xs text-gray-500 dark:text-gray-400 bg-gray-100 dark:bg-gray-800 px-2 py-0.5 rounded-full inline-block mt-1">Data Source: Billing</p>
+                  <h2 className="text-base font-semibold text-gray-900 dark:text-white">{t('ai_assistant.billing_anomalies.title')}</h2>
+                  <p className="text-xs text-gray-500 dark:text-gray-400 bg-gray-100 dark:bg-gray-800 px-2 py-0.5 rounded-full inline-block mt-1">{t('ai_assistant.billing_anomalies.data_source')}</p>
                 </div>
               </div>
             </div>
@@ -286,8 +288,8 @@ export function AIAssistantPage() {
                   Fuel surcharge not applied, detention fees missing
                 </p>
                 <div className="flex gap-2">
-                  <button onClick={() => alert('Invoice INV-24-3847 Updated.')} className="px-3 py-1.5 bg-[#2563EB] text-white rounded-lg font-medium text-xs hover:bg-blue-700 transition-colors">Update Invoice</button>
-                  <button onClick={() => alert('Dismissed')} className="px-3 py-1.5 bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-lg font-medium text-xs hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors">Dismiss</button>
+                  <button onClick={() => alert('Invoice INV-24-3847 Updated.')} className="px-3 py-1.5 bg-[#2563EB] text-white rounded-lg font-medium text-xs hover:bg-blue-700 transition-colors">{t('ai_assistant.billing_anomalies.update_invoice')}</button>
+                  <button onClick={() => alert('Dismissed')} className="px-3 py-1.5 bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-lg font-medium text-xs hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors">{t('common.cancel')}</button>
                 </div>
               </div>
 
@@ -303,9 +305,9 @@ export function AIAssistantPage() {
                   Same load billed twice, customer notification required
                 </p>
                 <div className="flex gap-2">
-                  <button onClick={() => alert('Duplicate invoice voided.')} className="px-3 py-1.5 bg-red-600 text-white rounded-lg font-medium text-xs hover:bg-red-700 transition-colors">Void Duplicate</button>
-                  <button onClick={() => alert('Opening customer contact dialog...')} className="px-3 py-1.5 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 bg-white dark:bg-[#1E293B] rounded-lg font-medium text-xs hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors">Contact Customer</button>
-                  <button onClick={() => alert('Dismissed')} className="px-3 py-1.5 bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-lg font-medium text-xs hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors">Dismiss</button>
+                  <button onClick={() => alert('Duplicate invoice voided.')} className="px-3 py-1.5 bg-red-600 text-white rounded-lg font-medium text-xs hover:bg-red-700 transition-colors">{t('ai_assistant.billing_anomalies.void_duplicate')}</button>
+                  <button onClick={() => alert('Opening customer contact dialog...')} className="px-3 py-1.5 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 bg-white dark:bg-[#1E293B] rounded-lg font-medium text-xs hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors">{t('ai_assistant.billing_anomalies.contact_customer')}</button>
+                  <button onClick={() => alert('Dismissed')} className="px-3 py-1.5 bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-lg font-medium text-xs hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors">{t('common.cancel')}</button>
                 </div>
               </div>
 
@@ -321,8 +323,8 @@ export function AIAssistantPage() {
                   Invoiced rate differs from contracted rate by $180
                 </p>
                 <div className="flex gap-2">
-                  <button onClick={() => alert('Contract verified')} className="px-3 py-1.5 bg-[#2563EB] text-white rounded-lg font-medium text-xs hover:bg-blue-700 transition-colors">Verify Contract</button>
-                  <button onClick={() => alert('Dismissed')} className="px-3 py-1.5 bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-lg font-medium text-xs hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors">Dismiss</button>
+                  <button onClick={() => alert('Contract verified')} className="px-3 py-1.5 bg-[#2563EB] text-white rounded-lg font-medium text-xs hover:bg-blue-700 transition-colors">{t('ai_assistant.billing_anomalies.verify_contract')}</button>
+                  <button onClick={() => alert('Dismissed')} className="px-3 py-1.5 bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-lg font-medium text-xs hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors">{t('common.cancel')}</button>
                 </div>
               </div>
             </div>

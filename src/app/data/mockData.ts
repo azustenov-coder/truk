@@ -89,7 +89,7 @@ export const mockLoads: Load[] = [
       name: 'James Rodriguez',
       avatar: '👨‍✈️',
       phone: '(555) 123-4567',
-      email: 'j.rodriguez@fleetflow.com'
+      email: 'j.rodriguez@logistik-ai.com'
     },
     vehicle: {
       id: 'V-2847',
@@ -146,7 +146,7 @@ export const mockLoads: Load[] = [
       name: 'Maria Chen',
       avatar: '👩‍✈️',
       phone: '(555) 234-5678',
-      email: 'm.chen@fleetflow.com'
+      email: 'm.chen@logistik-ai.com'
     },
     vehicle: {
       id: 'V-1923',
@@ -202,7 +202,7 @@ export const mockLoads: Load[] = [
       name: 'Carlos Martinez',
       avatar: '👨‍✈️',
       phone: '(555) 345-6789',
-      email: 'c.martinez@fleetflow.com'
+      email: 'c.martinez@logistik-ai.com'
     },
     vehicle: {
       id: 'V-4521',
@@ -259,7 +259,7 @@ export const mockLoads: Load[] = [
       name: 'Thomas Wilson',
       avatar: '👨‍✈️',
       phone: '(555) 456-7890',
-      email: 't.wilson@fleetflow.com'
+      email: 't.wilson@logistik-ai.com'
     },
     vehicle: {
       id: 'V-3264',
@@ -314,7 +314,7 @@ export const mockLoads: Load[] = [
       name: 'Emily Davis',
       avatar: '👩‍✈️',
       phone: '(555) 567-8901',
-      email: 'e.davis@fleetflow.com'
+      email: 'e.davis@logistik-ai.com'
     },
     vehicle: {
       id: 'V-5893',
@@ -370,7 +370,7 @@ export const mockLoads: Load[] = [
       name: 'Daniel Brown',
       avatar: '👨‍✈️',
       phone: '(555) 678-9012',
-      email: 'd.brown@fleetflow.com'
+      email: 'd.brown@logistik-ai.com'
     },
     vehicle: {
       id: 'V-7234',
@@ -426,7 +426,7 @@ export const mockLoads: Load[] = [
       name: 'Sarah Johnson',
       avatar: '👩‍✈️',
       phone: '(555) 789-0123',
-      email: 's.johnson@fleetflow.com'
+      email: 's.johnson@logistik-ai.com'
     },
     vehicle: {
       id: 'V-8456',
@@ -482,7 +482,7 @@ export const mockLoads: Load[] = [
       name: 'Michael Lee',
       avatar: '👨‍✈️',
       phone: '(555) 890-1234',
-      email: 'm.lee@fleetflow.com'
+      email: 'm.lee@logistik-ai.com'
     },
     vehicle: {
       id: 'V-2198',
@@ -539,7 +539,7 @@ export const mockLoads: Load[] = [
       name: 'Patricia Moore',
       avatar: '👩‍✈️',
       phone: '(555) 901-2345',
-      email: 'p.moore@fleetflow.com'
+      email: 'p.moore@logistik-ai.com'
     },
     vehicle: {
       id: 'V-3729',
@@ -595,7 +595,7 @@ export const mockLoads: Load[] = [
       name: 'Robert King',
       avatar: '👨‍✈️',
       phone: '(555) 012-3456',
-      email: 'r.king@fleetflow.com'
+      email: 'r.king@logistik-ai.com'
     },
     vehicle: {
       id: 'V-4867',

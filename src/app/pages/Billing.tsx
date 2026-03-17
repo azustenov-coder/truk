@@ -10,6 +10,8 @@ import {
   Send,
   ChevronDown
 } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
+import * as XLSX from 'xlsx';
 import { getCustomerIcon } from '../utils/icons';
 import {
   Dialog,
@@ -112,6 +114,7 @@ const statusColors = {
 };
 
 export function BillingPage() {
+  const { t } = useTranslation();
   const [filterStatus, setFilterStatus] = useState<string>('All Status');
   const [filterCustomer, setFilterCustomer] = useState<string>('All Customers');
   const [filterAging, setFilterAging] = useState<string>('All Aging');
@@ -153,6 +156,36 @@ export function BillingPage() {
     .filter(i => i.status === 'Overdue')
     .reduce((sum, i) => sum + parseFloat(i.amount.replace(/[$,]/g, '')), 0);
 
+  const exportToExcel = () => {
+    const data = filteredInvoices.map((inv: any) => ({
+      [t('billing.invoice_number')]: inv.invoiceNumber,
+      [t('billing.customer')]: inv.customer,
+      [t('billing.amount')]: inv.amount,
+      [t('billing.due_date')]: inv.dueDate,
+      [t('billing.status')]: t(`billing.${inv.status.toLowerCase()}`),
+      [t('billing.created_date')]: inv.createdDate
+    }));
+
+    const worksheet = XLSX.utils.json_to_sheet(data);
+    
+    // AutoFit columns
+    const maxWidths = data.reduce((acc: any, row: any) => {
+      Object.keys(row).forEach((key, i) => {
+        const val = row[key] ? row[key].toString() : '';
+        const width = Math.max(acc[i] || 10, val.length + 2, key.length + 2);
+        acc[i] = width;
+      });
+      return acc;
+    }, []);
+    worksheet['!cols'] = maxWidths.map((w: number) => ({ wch: w }));
+
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, t('sidebar.billing'));
+    
+    // Robust download using XLSX.writeFile
+    XLSX.writeFile(workbook, `Truk_Fakturalar_${new Date().toISOString().split('T')[0]}.xlsx`);
+  };
+
   return (
     <div className="flex flex-col h-full">
       {/* Page Header */}
@@ -160,54 +193,33 @@ export function BillingPage() {
         <div className="flex items-center justify-between mb-6">
           <div>
             <h1 className="text-2xl font-semibold text-gray-900 dark:text-white">
-              BILLING & INVOICES
+              {t('billing.title')}
             </h1>
             <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
-              Manage invoices, track payments, and handle customer billing
+              {t('billing.subtitle')}
             </p>
           </div>
           <div className="flex items-center gap-3">
-            <Dialog>
-              <DialogTrigger asChild>
-                <button className="flex items-center gap-2 px-4 py-2 border border-gray-200 dark:border-gray-700 rounded-lg text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors focus:outline-none shadow-sm bg-white dark:bg-[#1E293B]">
-                  <Download size={16} />
-                  Export Data
-                </button>
-              </DialogTrigger>
-              <DialogContent className="sm:max-w-[425px]">
-                <DialogHeader>
-                  <DialogTitle>Export Invoices</DialogTitle>
-                </DialogHeader>
-                <div className="grid gap-4 py-4">
-                  <div className="border-2 border-dashed border-gray-200 dark:border-gray-700 rounded-xl p-8 flex flex-col items-center justify-center text-center cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors">
-                    <div className="w-12 h-12 bg-blue-50 dark:bg-blue-900/30 rounded-full flex items-center justify-center mb-4">
-                      <Download className="text-blue-500 w-6 h-6" />
-                    </div>
-                    <p className="text-sm font-semibold text-gray-900 dark:text-gray-100">Export as CSV or PDF</p>
-                    <p className="text-xs font-medium text-gray-500 dark:text-gray-400 mt-1">Select date range and format</p>
-                  </div>
-                </div>
-                <DialogFooter>
-                  <DialogClose asChild>
-                    <button className="px-4 py-2 bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors text-sm font-semibold border border-gray-200 dark:border-gray-700 shadow-sm">Cancel</button>
-                  </DialogClose>
-                  <button className="px-5 py-2 bg-[#2563EB] text-white rounded-lg hover:bg-[#1d4ed8] transition-colors text-sm font-semibold shadow-sm ml-2">Export Now</button>
-                </DialogFooter>
-              </DialogContent>
-            </Dialog>
+            <button 
+              onClick={exportToExcel}
+              className="flex items-center gap-2 px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg transition-colors shadow-sm font-medium"
+            >
+              <Download size={16} />
+              {t('billing.export_data')}
+            </button>
 
             <button className="flex items-center gap-2 px-4 py-2 border border-gray-200 dark:border-gray-700 rounded-lg text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors font-medium">
-              Settings
+              {t('sidebar.settings')}
             </button>
             <Dialog>
               <DialogTrigger asChild>
                 <button className="flex items-center gap-2 px-4 py-2 bg-[#2563EB] text-white rounded-lg hover:bg-[#1d4ed8] transition-colors shadow-sm focus:outline-none font-medium">
-                  + Create Invoice
+                  + {t('billing.create_invoice')}
                 </button>
               </DialogTrigger>
               <DialogContent className="sm:max-w-[500px]">
                 <DialogHeader>
-                  <DialogTitle>Create New Invoice</DialogTitle>
+                  <DialogTitle>{t('billing.create_invoice')}</DialogTitle>
                 </DialogHeader>
                 <div className="grid gap-5 py-4">
                   <div className="grid grid-cols-2 gap-4">
@@ -245,9 +257,9 @@ export function BillingPage() {
                 </div>
                 <DialogFooter>
                   <DialogClose asChild>
-                    <button className="px-5 py-2.5 bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors text-sm font-semibold border border-gray-200 dark:border-gray-700 shadow-sm">Cancel</button>
+                    <button className="px-5 py-2.5 bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors text-sm font-semibold border border-gray-200 dark:border-gray-700 shadow-sm">{t('common.cancel')}</button>
                   </DialogClose>
-                  <button className="px-5 py-2.5 bg-[#2563EB] text-white rounded-lg hover:bg-[#1d4ed8] transition-colors text-sm font-semibold shadow-sm ml-2">Generate</button>
+                  <button className="px-5 py-2.5 bg-[#2563EB] text-white rounded-lg hover:bg-[#1d4ed8] transition-colors text-sm font-semibold shadow-sm ml-2">{t('billing.generate')}</button>
                 </DialogFooter>
               </DialogContent>
             </Dialog>
@@ -257,25 +269,25 @@ export function BillingPage() {
         {/* Summary Cards */}
         <div className="grid grid-cols-4 gap-4">
           <div className="bg-gray-50 dark:bg-gray-900 rounded-xl p-4">
-            <p className="text-sm text-gray-600 dark:text-gray-400">Total Outstanding</p>
+            <p className="text-sm text-gray-600 dark:text-gray-400">{t('billing.total_outstanding')}</p>
             <p className="text-2xl font-semibold text-gray-900 dark:text-white mt-2">
               ${totalOutstanding.toLocaleString(undefined, { minimumFractionDigits: 2 })}
             </p>
           </div>
           <div className="bg-green-50 dark:bg-green-900/20 rounded-xl p-4">
-            <p className="text-sm text-green-600 dark:text-green-400">Paid</p>
+            <p className="text-sm text-green-600 dark:text-green-400">{t('billing.paid')}</p>
             <p className="text-2xl font-semibold text-green-700 dark:text-green-300 mt-2">
               ${totalPaid.toLocaleString(undefined, { minimumFractionDigits: 2 })}
             </p>
           </div>
           <div className="bg-yellow-50 dark:bg-yellow-900/20 rounded-xl p-4">
-            <p className="text-sm text-yellow-600 dark:text-yellow-400">Pending</p>
+            <p className="text-sm text-yellow-600 dark:text-yellow-400">{t('billing.pending')}</p>
             <p className="text-2xl font-semibold text-yellow-700 dark:text-yellow-300 mt-2">
               ${totalPending.toLocaleString(undefined, { minimumFractionDigits: 2 })}
             </p>
           </div>
           <div className="bg-red-50 dark:bg-red-900/20 rounded-xl p-4">
-            <p className="text-sm text-red-600 dark:text-red-400">Overdue</p>
+            <p className="text-sm text-red-600 dark:text-red-400">{t('billing.overdue')}</p>
             <p className="text-2xl font-semibold text-red-700 dark:text-red-300 mt-2">
               ${totalOverdue.toLocaleString(undefined, { minimumFractionDigits: 2 })}
             </p>
@@ -290,10 +302,10 @@ export function BillingPage() {
               onChange={(e) => setFilterStatus(e.target.value)}
               className="px-3 py-1.5 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg text-sm text-gray-700 dark:text-gray-300 focus:outline-none focus:ring-1 focus:ring-blue-500"
             >
-              <option value="All Status">All Status</option>
-              <option value="Paid">Paid</option>
-              <option value="Pending">Pending</option>
-              <option value="Overdue">Overdue</option>
+              <option value="All Status">{t('orders.all_status')}</option>
+              <option value="Paid">{t('billing.paid')}</option>
+              <option value="Pending">{t('billing.pending')}</option>
+              <option value="Overdue">{t('billing.overdue')}</option>
             </select>
           </div>
           <div className="flex items-center gap-2">
@@ -302,7 +314,7 @@ export function BillingPage() {
               onChange={(e) => setFilterCustomer(e.target.value)}
               className="px-3 py-1.5 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg text-sm text-gray-700 dark:text-gray-300 focus:outline-none focus:ring-1 focus:ring-blue-500"
             >
-              <option value="All Customers">All Customers</option>
+              <option value="All Customers">{t('billing.all_customers')}</option>
               {allCustomers.map(customer => (
                 <option key={customer} value={customer}>{customer}</option>
               ))}
@@ -321,11 +333,11 @@ export function BillingPage() {
               onChange={(e) => setFilterAging(e.target.value)}
               className="px-3 py-1.5 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg text-sm text-gray-700 dark:text-gray-300 focus:outline-none focus:ring-1 focus:ring-blue-500"
             >
-              <option value="All Aging">All Aging</option>
-              <option value="Current">Current</option>
-              <option value="< 30 Days">&lt; 30 Days Overdue</option>
-              <option value="30 - 60 Days">30-60 Days Overdue</option>
-              <option value="> 60 Days">&gt; 60 Days Overdue</option>
+              <option value="All Aging">{t('billing.all_aging')}</option>
+              <option value="Current">{t('billing.current')}</option>
+              <option value="< 30 Days">{t('billing.less_30_days')} {t('billing.overdue')}</option>
+              <option value="30 - 60 Days">{t('billing.30_60_days')} {t('billing.overdue')}</option>
+              <option value="> 60 Days">{t('billing.more_60_days')} {t('billing.overdue')}</option>
             </select>
           </div>
           {(filterStatus !== 'All Status' || filterCustomer !== 'All Customers' || filterAging !== 'All Aging') && (
@@ -350,22 +362,22 @@ export function BillingPage() {
             <thead className="bg-gray-50 dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700">
               <tr>
                 <th className="px-6 py-3 text-left text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wider">
-                  Invoice #
+                  {t('billing.invoice_number')}
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wider">
-                  Customer
+                  {t('billing.customer')}
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wider">
-                  Amount
+                  {t('billing.amount')}
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wider">
-                  Due Date
+                  {t('billing.due_date')}
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wider">
-                  Status
+                  {t('billing.status')}
                 </th>
                 <th className="px-6 py-3 text-right text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wider">
-                  Actions
+                  {t('billing.actions')}
                 </th>
               </tr>
             </thead>
@@ -409,14 +421,14 @@ export function BillingPage() {
                       </p>
                       {invoice.daysOverdue && (
                         <p className="text-xs text-red-600 dark:text-red-400">
-                          {invoice.daysOverdue} days overdue
+                          {t('billing.days_overdue', { count: invoice.daysOverdue })}
                         </p>
                       )}
                     </div>
                   </td>
                   <td className="px-6 py-4">
                     <span className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium ${statusColors[invoice.status]}`}>
-                      {invoice.status}
+                      {t(`billing.${invoice.status.toLowerCase()}`)}
                     </span>
                   </td>
                   <td className="px-6 py-4">
@@ -441,11 +453,11 @@ export function BillingPage() {
         {/* Pagination */}
         <div className="flex items-center justify-between mt-6">
           <p className="text-sm text-gray-600 dark:text-gray-400">
-            Showing 1-{filteredInvoices.length} of {filteredInvoices.length} invoices
+            {t('common.showing', { count: filteredInvoices.length, from: 1, to: filteredInvoices.length })}
           </p>
           <div className="flex gap-2">
             <button className="px-3 py-2 border border-gray-200 dark:border-gray-700 rounded-lg text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors disabled:opacity-50" disabled>
-              Previous
+              {t('common.previous')}
             </button>
             <button className="px-3 py-2 bg-[#2563EB] text-white rounded-lg text-sm">
               1
@@ -454,7 +466,7 @@ export function BillingPage() {
               2
             </button>
             <button className="px-3 py-2 border border-gray-200 dark:border-gray-700 rounded-lg text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors">
-              Next
+              {t('common.next')}
             </button>
           </div>
         </div>

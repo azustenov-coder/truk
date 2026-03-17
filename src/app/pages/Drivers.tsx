@@ -1,4 +1,7 @@
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
+import { useQuery } from '@tanstack/react-query';
+import axios from 'axios';
 import {
   Users,
   Star,
@@ -8,8 +11,13 @@ import {
   Mail,
   MapPin,
   Clock,
-  ChevronDown
+  ChevronDown,
+  FileText,
+  Download
 } from 'lucide-react';
+import { jsPDF } from 'jspdf';
+import 'jspdf-autotable';
+import * as XLSX from 'xlsx';
 import { getDriverIcon } from '../utils/icons';
 import { useGlobalFilter } from '../providers/FilterProvider';
 import {
@@ -129,19 +137,67 @@ const hosRiskColors = {
 };
 
 export function DriversPage() {
+  const { t } = useTranslation();
   const [filterStatus, setFilterStatus] = useState<string>('All Status');
   const [filterRisk, setFilterRisk] = useState<string>('All Risk');
   const { globalLocationFilter, setGlobalLocationFilter } = useGlobalFilter();
   const [filterRating, setFilterRating] = useState<string>('All Ratings');
 
-  const allLocations = Array.from(new Set(mockDrivers.map(d => d.currentLocation))).sort();
+  const { data: drivers = [] } = useQuery({
+    queryKey: ['drivers'],
+    queryFn: async () => {
+      const response = await axios.get('/api/drivers');
+      return response.data.map((uber: any) => ({
+        id: uber.id.toString(),
+        name: uber.full_name || uber.username,
+        license: 'CDL-A',
+        licenseClass: 'First 500 • CDL Class A',
+        avatar: '👨‍✈️',
+        status: 'Available',
+        hosRisk: 'Low',
+        rating: 4.8,
+        lastTrip: 'N/A',
+        currentLocation: 'Hub',
+        nextDestination: 'Available for dispatch',
+        phone: '(555) 000-0000',
+        email: `${uber.username}@logistik-ai.com`
+      } as Driver));
+    }
+  });
+
+  const allLocations = Array.from(new Set(drivers.map((d: any) => d.currentLocation))).sort();
 
   const getFilteredDrivers = () => {
-    return mockDrivers.filter(d => {
-      if (filterStatus !== 'All Status' && d.status !== filterStatus) return false;
-      if (filterRisk !== 'All Risk' && d.hosRisk !== filterRisk) return false;
-      if (globalLocationFilter !== 'All Locations' && d.currentLocation !== globalLocationFilter) return false;
-      if (filterRating !== 'All Ratings') {
+    return drivers.filter((d: any) => {
+      // Status Logic
+      if (filterStatus !== 'All Status' && filterStatus !== t('orders.all_status')) {
+        const statusMap: Record<string, string> = {
+          [t('common.available')]: 'Available',
+          [t('common.on_trip')]: 'On Trip',
+          [t('common.off_duty')]: 'Off Duty'
+        };
+        const internalStatus = statusMap[filterStatus] || filterStatus;
+        if (d.status !== internalStatus) return false;
+      }
+
+      // Risk Logic
+      if (filterRisk !== 'All Risk' && filterRisk !== t('drivers.risk')) {
+        const riskMap: Record<string, string> = {
+          [t('common.low')]: 'Low',
+          [t('common.medium')]: 'Medium',
+          [t('common.high')]: 'High'
+        };
+        const internalRisk = riskMap[filterRisk] || filterRisk;
+        if (d.hosRisk !== internalRisk) return false;
+      }
+
+      // Location Logic
+      if (globalLocationFilter !== 'All Locations' && globalLocationFilter !== t('fleet.all_locations')) {
+        if (d.currentLocation !== globalLocationFilter) return false;
+      }
+
+      // Rating Logic
+      if (filterRating !== 'All Ratings' && filterRating !== t('drivers.all_ratings')) {
         if (filterRating === '4.5+') {
           if (d.rating < 4.5) return false;
         } else if (filterRating === '4.0 - 4.4') {
@@ -160,75 +216,147 @@ export function DriversPage() {
   const hosRiskAlerts = filteredDrivers.filter(d => d.hosRisk === 'High').length;
   const avgRating = totalDrivers > 0 ? (filteredDrivers.reduce((acc, d) => acc + d.rating, 0) / totalDrivers).toFixed(1) : "0.0";
 
+  const exportToPDF = () => {
+    const doc = new jsPDF() as any;
+    
+    doc.setFontSize(20);
+    doc.text(t('drivers.title'), 14, 22);
+    doc.setFontSize(11);
+    doc.setTextColor(100);
+    doc.text(`${t('fleet.date')}: ${new Date().toLocaleDateString()}`, 14, 30);
+
+    const tableData = filteredDrivers.map(d => [
+      d.name,
+      t(`common.${d.status.toLowerCase().replace(' ', '_')}`),
+      d.license,
+      d.rating.toString(),
+      d.currentLocation,
+      d.phone
+    ]);
+
+    doc.autoTable({
+      startY: 40,
+      head: [[t('drivers.name'), t('common.status'), t('drivers.license'), t('drivers.rating'), t('drivers.location'), t('drivers.phone')]],
+      body: tableData,
+      theme: 'striped',
+      headStyles: { fillStyle: '#2563EB' },
+    });
+
+    doc.save(`Truk_Drivers_${new Date().toISOString().split('T')[0]}.pdf`);
+  };
+
+  const exportToExcel = () => {
+    const data = filteredDrivers.map((d: any) => ({
+      [t('drivers.name')]: d.name,
+      [t('common.status')]: t(`common.${d.status.toLowerCase().replace(' ', '_')}`),
+      [t('drivers.license')]: d.license,
+      [t('drivers.rating')]: d.rating,
+      [t('drivers.location')]: d.currentLocation,
+      [t('drivers.phone')]: d.phone
+    }));
+
+    const worksheet = XLSX.utils.json_to_sheet(data);
+    
+    // AutoFit columns
+    const maxWidths = data.reduce((acc: any, row: any) => {
+      Object.keys(row).forEach((key, i) => {
+        const val = row[key] ? row[key].toString() : '';
+        const width = Math.max(acc[i] || 10, val.length + 2, key.length + 2);
+        acc[i] = width;
+      });
+      return acc;
+    }, []);
+    worksheet['!cols'] = maxWidths.map((w: number) => ({ wch: w }));
+
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, t('sidebar.drivers'));
+    
+    // Robust download using XLSX.writeFile
+    XLSX.writeFile(workbook, `Truk_Haydovchilar_${new Date().toISOString().split('T')[0]}.xlsx`);
+  };
+
   return (
     <div className="flex flex-col h-full">
-      {/* Page Header */}
       <div className="bg-white dark:bg-[#1E293B] border-b border-gray-200 dark:border-gray-800 px-6 py-5">
         <div className="flex items-center justify-between mb-6">
           <div>
             <h1 className="text-2xl font-semibold text-gray-900 dark:text-white">
-              Driver Management
+              {t('drivers.title')}
             </h1>
             <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
-              Manage driver profiles, compliance, and performance
+              {t('drivers.subtitle')}
             </p>
           </div>
           <div className="flex items-center gap-3">
+            <button 
+              onClick={exportToPDF}
+              className="flex items-center gap-2 px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg transition-colors shadow-sm font-medium"
+            >
+              <FileText size={16} />
+              {t('drivers.export_pdf')}
+            </button>
+            <button 
+              onClick={exportToExcel}
+              className="flex items-center gap-2 px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg transition-colors shadow-sm font-medium"
+            >
+              <Download size={16} />
+              {t('orders.export_excel')}
+            </button>
             <Dialog>
               <DialogTrigger asChild>
                 <button className="flex items-center gap-2 px-4 py-2 border border-gray-200 dark:border-gray-700 rounded-lg text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors shadow-sm bg-white dark:bg-[#1E293B] focus:outline-none font-medium">
-                  Import Drivers
+                  {t('drivers.import_drivers')}
                 </button>
               </DialogTrigger>
               <DialogContent className="sm:max-w-[425px]">
                 <DialogHeader>
-                  <DialogTitle>Import Driver Data</DialogTitle>
+                  <DialogTitle>{t('drivers.import_drivers')}</DialogTitle>
                 </DialogHeader>
                 <div className="grid gap-4 py-4">
                   <div className="border-2 border-dashed border-gray-200 dark:border-gray-700 rounded-xl p-8 flex flex-col items-center justify-center text-center cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors">
                     <div className="w-12 h-12 bg-blue-50 dark:bg-blue-900/30 rounded-full flex items-center justify-center mb-4">
                       <Users className="text-blue-500 w-6 h-6" />
                     </div>
-                    <p className="text-sm font-semibold text-gray-900 dark:text-gray-100">Click to upload or drag and drop</p>
-                    <p className="text-xs font-medium text-gray-500 dark:text-gray-400 mt-1">CSV or Excel files only (max. 10MB)</p>
+                    <p className="text-sm font-semibold text-gray-900 dark:text-gray-100">{t('fleet.click_upload')}</p>
+                    <p className="text-xs font-medium text-gray-500 dark:text-gray-400 mt-1">{t('fleet.csv_excel_only')}</p>
                   </div>
                 </div>
                 <DialogFooter>
                   <DialogClose asChild>
-                    <button className="px-4 py-2 bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors text-sm font-semibold border border-gray-200 dark:border-gray-700 shadow-sm">Cancel</button>
+                    <button className="px-4 py-2 bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors text-sm font-semibold border border-gray-200 dark:border-gray-700 shadow-sm">{t('common.cancel')}</button>
                   </DialogClose>
-                  <button className="px-5 py-2 bg-[#2563EB] text-white rounded-lg hover:bg-[#1d4ed8] transition-colors text-sm font-semibold shadow-sm ml-2">Import Data</button>
+                  <button className="px-5 py-2 bg-[#2563EB] text-white rounded-lg hover:bg-[#1d4ed8] transition-colors text-sm font-semibold shadow-sm ml-2">{t('drivers.import_drivers')}</button>
                 </DialogFooter>
               </DialogContent>
             </Dialog>
 
             <button className="flex items-center gap-2 px-4 py-2 border border-gray-200 dark:border-gray-700 rounded-lg text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors shadow-sm bg-white dark:bg-[#1E293B] focus:outline-none font-medium">
-              Compliance Report
+              {t('drivers.compliance_report')}
             </button>
 
             <Dialog>
               <DialogTrigger asChild>
                 <button className="flex items-center gap-2 px-4 py-2 bg-[#2563EB] text-white rounded-lg hover:bg-[#1d4ed8] transition-colors shadow-sm focus:outline-none font-medium">
-                  + Add New Driver
+                  {t('drivers.add_driver')}
                 </button>
               </DialogTrigger>
               <DialogContent className="sm:max-w-[500px]">
                 <DialogHeader>
-                  <DialogTitle>Add New Driver</DialogTitle>
+                  <DialogTitle>{t('drivers.add_driver')}</DialogTitle>
                 </DialogHeader>
                 <div className="grid gap-5 py-4">
                   <div className="grid grid-cols-2 gap-4">
                     <div className="grid gap-2">
-                      <label className="text-sm font-semibold text-gray-700 dark:text-gray-300">First Name</label>
+                      <label className="text-sm font-semibold text-gray-700 dark:text-gray-300">{t('drivers.first_name')}</label>
                       <input type="text" placeholder="e.g. John" className="px-3 py-2.5 bg-gray-50 dark:bg-[#1E293B] border border-gray-200 dark:border-gray-700 rounded-lg text-sm text-gray-900 dark:text-white shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
                     </div>
                     <div className="grid gap-2">
-                      <label className="text-sm font-semibold text-gray-700 dark:text-gray-300">Last Name</label>
+                      <label className="text-sm font-semibold text-gray-700 dark:text-gray-300">{t('drivers.last_name')}</label>
                       <input type="text" placeholder="e.g. Doe" className="px-3 py-2.5 bg-gray-50 dark:bg-[#1E293B] border border-gray-200 dark:border-gray-700 rounded-lg text-sm text-gray-900 dark:text-white shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
                     </div>
                   </div>
                   <div className="grid gap-2">
-                    <label className="text-sm font-semibold text-gray-700 dark:text-gray-300">License Class</label>
+                    <label className="text-sm font-semibold text-gray-700 dark:text-gray-300">{t('drivers.license_class')}</label>
                     <select className="px-3 py-2.5 bg-gray-50 dark:bg-[#1E293B] border border-gray-200 dark:border-gray-700 rounded-lg text-sm text-gray-900 dark:text-white shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
                       <option>CDL Class A</option>
                       <option>CDL Class B</option>
@@ -236,11 +364,11 @@ export function DriversPage() {
                     </select>
                   </div>
                   <div className="grid gap-2">
-                    <label className="text-sm font-semibold text-gray-700 dark:text-gray-300">Phone Number</label>
+                    <label className="text-sm font-semibold text-gray-700 dark:text-gray-300">{t('drivers.phone_number')}</label>
                     <input type="tel" placeholder="(555) 000-0000" className="px-3 py-2.5 bg-gray-50 dark:bg-[#1E293B] border border-gray-200 dark:border-gray-700 rounded-lg text-sm text-gray-900 dark:text-white shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
                   </div>
                   <div className="grid gap-2">
-                    <label className="text-sm font-semibold text-gray-700 dark:text-gray-300">Hub Location</label>
+                    <label className="text-sm font-semibold text-gray-700 dark:text-gray-300">{t('fleet.hub_location')}</label>
                     <select className="px-3 py-2.5 bg-gray-50 dark:bg-[#1E293B] border border-gray-200 dark:border-gray-700 rounded-lg text-sm text-gray-900 dark:text-white shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
                       <option>Chicago Hub</option>
                       <option>Dallas Terminal</option>
@@ -250,9 +378,9 @@ export function DriversPage() {
                 </div>
                 <DialogFooter>
                   <DialogClose asChild>
-                    <button className="px-5 py-2.5 bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors text-sm font-semibold border border-gray-200 dark:border-gray-700 shadow-sm">Cancel</button>
+                    <button className="px-5 py-2.5 bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors text-sm font-semibold border border-gray-200 dark:border-gray-700 shadow-sm">{t('common.cancel')}</button>
                   </DialogClose>
-                  <button className="px-5 py-2.5 bg-[#2563EB] text-white rounded-lg hover:bg-[#1d4ed8] transition-colors text-sm font-semibold shadow-sm ml-2">Save Driver</button>
+                  <button className="px-5 py-2.5 bg-[#2563EB] text-white rounded-lg hover:bg-[#1d4ed8] transition-colors text-sm font-semibold shadow-sm ml-2">{t('drivers.save_driver')}</button>
                 </DialogFooter>
               </DialogContent>
             </Dialog>
@@ -267,7 +395,7 @@ export function DriversPage() {
             </div>
             <div>
               <p className="text-2xl font-semibold text-blue-700 dark:text-blue-300">{totalDrivers}</p>
-              <p className="text-sm text-blue-600 dark:text-blue-400">Total Active Drivers</p>
+              <p className="text-sm text-blue-600 dark:text-blue-400">{t('drivers.total_active')}</p>
             </div>
           </div>
 
@@ -277,7 +405,7 @@ export function DriversPage() {
             </div>
             <div>
               <p className="text-2xl font-semibold text-green-700 dark:text-green-300">{availableNow}</p>
-              <p className="text-sm text-green-600 dark:text-green-400">Available Now</p>
+              <p className="text-sm text-green-600 dark:text-green-400">{t('drivers.available_now')}</p>
             </div>
           </div>
 
@@ -287,7 +415,7 @@ export function DriversPage() {
             </div>
             <div>
               <p className="text-2xl font-semibold text-red-700 dark:text-red-300">{hosRiskAlerts}</p>
-              <p className="text-sm text-red-600 dark:text-red-400">HOS Risk Alerts</p>
+              <p className="text-sm text-red-600 dark:text-red-400">{t('drivers.hos_alerts')}</p>
             </div>
           </div>
 
@@ -297,7 +425,7 @@ export function DriversPage() {
             </div>
             <div>
               <p className="text-2xl font-semibold text-yellow-700 dark:text-yellow-300">{avgRating}</p>
-              <p className="text-sm text-yellow-600 dark:text-yellow-400">Average Rating</p>
+              <p className="text-sm text-yellow-600 dark:text-yellow-400">{t('drivers.avg_rating')}</p>
             </div>
           </div>
         </div>
@@ -305,52 +433,52 @@ export function DriversPage() {
         {/* Filters */}
         <div className="flex items-center gap-3 mt-4">
           <div className="flex items-center gap-2">
-            <span className="text-sm text-gray-600 dark:text-gray-400">Status:</span>
+            <span className="text-sm text-gray-600 dark:text-gray-400">{t('common.status')}:</span>
             <select
               value={filterStatus}
               onChange={(e) => setFilterStatus(e.target.value)}
               className="px-3 py-1.5 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg text-sm text-gray-700 dark:text-gray-300 focus:outline-none focus:ring-1 focus:ring-blue-500"
             >
-              <option value="All Status">All Status</option>
-              <option value="Available">Available</option>
-              <option value="On Trip">On Trip</option>
-              <option value="Off Duty">Off Duty</option>
+              <option value="All Status">{t('orders.all_status')}</option>
+              <option value={t('common.available')}>{t('common.available')}</option>
+              <option value={t('common.on_trip')}>{t('common.on_trip')}</option>
+              <option value={t('common.off_duty')}>{t('common.off_duty')}</option>
             </select>
           </div>
           <div className="flex items-center gap-2">
-            <span className="text-sm text-gray-600 dark:text-gray-400">HOS Risk:</span>
+            <span className="text-sm text-gray-600 dark:text-gray-400">{t('drivers.risk')}:</span>
             <select
               value={filterRisk}
               onChange={(e) => setFilterRisk(e.target.value)}
               className="px-3 py-1.5 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg text-sm text-gray-700 dark:text-gray-300 focus:outline-none focus:ring-1 focus:ring-blue-500"
             >
               <option value="All Risk">All Risk</option>
-              <option value="Low">Low</option>
-              <option value="Medium">Medium</option>
-              <option value="High">High</option>
+              <option value={t('common.low')}>{t('common.low')}</option>
+              <option value={t('common.medium')}>{t('common.medium')}</option>
+              <option value={t('common.high')}>{t('common.high')}</option>
             </select>
           </div>
           <div className="flex items-center gap-2">
-            <span className="text-sm text-gray-600 dark:text-gray-400">Location:</span>
+            <span className="text-sm text-gray-600 dark:text-gray-400">{t('fleet.location')}:</span>
             <select
               value={globalLocationFilter}
               onChange={(e) => setGlobalLocationFilter(e.target.value)}
               className="px-3 py-1.5 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg text-sm text-gray-700 dark:text-gray-300 focus:outline-none focus:ring-1 focus:ring-blue-500"
             >
-              <option value="All Locations">All Locations</option>
+              <option value="All Locations">{t('fleet.all_locations')}</option>
               {allLocations.map(loc => (
                 <option key={loc} value={loc}>{loc}</option>
               ))}
             </select>
           </div>
           <div className="flex items-center gap-2">
-            <span className="text-sm text-gray-600 dark:text-gray-400">Rating:</span>
+            <span className="text-sm text-gray-600 dark:text-gray-400">{t('drivers.rating_label')}:</span>
             <select
               value={filterRating}
               onChange={(e) => setFilterRating(e.target.value)}
               className="px-3 py-1.5 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg text-sm text-gray-700 dark:text-gray-300 focus:outline-none focus:ring-1 focus:ring-blue-500"
             >
-              <option value="All Ratings">All Ratings</option>
+              <option value="All Ratings">{t('drivers.all_ratings')}</option>
               <option value="4.5+">4.5 & Above</option>
               <option value="4.0 - 4.4">4.0 to 4.4</option>
               <option value="< 4.0">Below 4.0</option>
@@ -366,7 +494,7 @@ export function DriversPage() {
               }}
               className="text-sm text-[#2563EB] hover:underline ml-2"
             >
-              × Clear All
+              {t('common.clear_all')}
             </button>
           )}
         </div>
@@ -379,25 +507,25 @@ export function DriversPage() {
             <thead className="bg-gray-50 dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700">
               <tr>
                 <th className="px-6 py-3 text-left text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wider">
-                  Driver
+                  {t('drivers.title').replace(' Management', '')}
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wider">
-                  Status
+                  {t('common.status')}
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wider">
-                  HOS Risk
+                  {t('drivers.risk')}
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wider">
-                  Rating
+                   {t('drivers.rating_label')}
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wider">
-                  Last Trip
+                  {t('drivers.last_trip')}
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wider">
-                  Current Location
+                  {t('fleet.location')}
                 </th>
                 <th className="px-6 py-3 text-right text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wider">
-                  Actions
+                  {t('common.actions')}
                 </th>
               </tr>
             </thead>
@@ -426,7 +554,9 @@ export function DriversPage() {
                           'bg-gray-400'
                         }`} />
                       <span className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium ${statusColors[driver.status]}`}>
-                        {driver.status}
+                        {driver.status === 'Available' ? t('common.available') :
+                         driver.status === 'On Trip' ? t('common.on_trip') :
+                         t('common.off_duty')}
                       </span>
                     </div>
                   </td>
@@ -434,7 +564,9 @@ export function DriversPage() {
                     <div className="flex items-center gap-2">
                       <div className={`w-2 h-2 rounded-full ${hosRiskColors[driver.hosRisk]}`} />
                       <span className="text-sm text-gray-900 dark:text-white">
-                        {driver.hosRisk}
+                        {driver.hosRisk === 'Low' ? t('common.low') :
+                         driver.hosRisk === 'Medium' ? t('common.medium') :
+                         t('common.high')}
                       </span>
                     </div>
                   </td>
@@ -468,12 +600,12 @@ export function DriversPage() {
                     <Dialog>
                       <DialogTrigger asChild>
                         <button className="text-[#2563EB] hover:underline text-sm font-medium focus:outline-none">
-                          View Profile
+                          {t('drivers.view_profile')}
                         </button>
                       </DialogTrigger>
                       <DialogContent className="sm:max-w-[425px]">
                         <DialogHeader>
-                          <DialogTitle>Driver Profile Overview</DialogTitle>
+                          <DialogTitle>{t('drivers.profile_overview')}</DialogTitle>
                         </DialogHeader>
                         <div className="space-y-5 py-3 text-left">
                           <div className="flex items-center gap-4 bg-gray-50 dark:bg-gray-800/50 p-4 rounded-xl border border-gray-100 dark:border-gray-800">
@@ -488,32 +620,40 @@ export function DriversPage() {
 
                           <div className="grid grid-cols-2 gap-3">
                             <div className="bg-gray-50 dark:bg-[#0F172A] p-3.5 rounded-xl border border-gray-100 dark:border-gray-800">
-                              <p className="text-[11px] text-gray-500 dark:text-gray-400 font-bold uppercase tracking-wider">Status</p>
+                              <p className="text-[11px] text-gray-500 dark:text-gray-400 font-bold uppercase tracking-wider">{t('common.status')}</p>
                               <div className="flex items-center gap-2 mt-1.5">
                                 <div className={`w-2 h-2 rounded-full shadow-sm ${driver.status === 'Available' ? 'bg-green-500' : driver.status === 'On Trip' ? 'bg-blue-500' : 'bg-gray-400'}`} />
-                                <p className="text-sm font-bold text-gray-900 dark:text-gray-100">{driver.status}</p>
+                                <p className="text-sm font-bold text-gray-900 dark:text-gray-100">
+                                  {driver.status === 'Available' ? t('common.available') :
+                                   driver.status === 'On Trip' ? t('common.on_trip') :
+                                   t('common.off_duty')}
+                                </p>
                               </div>
                             </div>
                             <div className="bg-gray-50 dark:bg-[#0F172A] p-3.5 rounded-xl border border-gray-100 dark:border-gray-800">
-                              <p className="text-[11px] text-gray-500 dark:text-gray-400 font-bold uppercase tracking-wider">HOS Risk</p>
+                              <p className="text-[11px] text-gray-500 dark:text-gray-400 font-bold uppercase tracking-wider">{t('drivers.risk')}</p>
                               <div className="flex items-center gap-2 mt-1.5">
                                 <div className={`w-2 h-2 rounded-full shadow-sm ${hosRiskColors[driver.hosRisk]}`} />
-                                <p className="text-sm font-bold text-gray-900 dark:text-gray-100">{driver.hosRisk} Risk</p>
+                                <p className="text-sm font-bold text-gray-900 dark:text-gray-100">
+                                  {driver.hosRisk === 'Low' ? t('common.low') :
+                                   driver.hosRisk === 'Medium' ? t('common.medium') :
+                                   t('common.high')}
+                                </p>
                               </div>
                             </div>
                             <div className="bg-gray-50 dark:bg-[#0F172A] p-3.5 rounded-xl border border-gray-100 dark:border-gray-800 col-span-2">
-                              <p className="text-[11px] text-gray-500 dark:text-gray-400 font-bold uppercase tracking-wider">Contact Methods</p>
+                              <p className="text-[11px] text-gray-500 dark:text-gray-400 font-bold uppercase tracking-wider">{t('drivers.contact_methods')}</p>
                               <div className="mt-2 space-y-2">
                                 <p className="text-sm font-bold text-gray-900 dark:text-gray-100 flex items-center gap-2.5">
                                   <Phone size={14} className="text-gray-400" /> {driver.phone}
                                 </p>
-                                <p className="text-sm font-bold text-gray-900 dark:text-gray-100 flex items-center gap-2.5">
+                                <p className="text-sm font-bold text-gray-900 dark:text-white flex items-center gap-2.5">
                                   <Mail size={14} className="text-gray-400" /> {driver.email}
                                 </p>
                               </div>
                             </div>
                             <div className="bg-gray-50 dark:bg-[#0F172A] p-3.5 rounded-xl border border-gray-100 dark:border-gray-800 col-span-2">
-                              <p className="text-[11px] text-gray-500 dark:text-gray-400 font-bold uppercase tracking-wider">Live Tracking</p>
+                              <p className="text-[11px] text-gray-500 dark:text-gray-400 font-bold uppercase tracking-wider">{t('drivers.live_tracking')}</p>
                               <div className="mt-2">
                                 <p className="text-sm font-bold text-gray-900 dark:text-gray-100 flex items-center gap-2.5">
                                   <MapPin size={16} className="text-red-500" /> {driver.currentLocation}
@@ -524,7 +664,7 @@ export function DriversPage() {
                         </div>
                         <DialogFooter className="mt-2 text-right">
                           <DialogClose asChild>
-                            <button className="px-5 py-2.5 w-full bg-[#2563EB] text-white rounded-lg hover:bg-[#1d4ed8] transition-colors text-sm font-semibold shadow-sm text-center">Close Profile</button>
+                            <button className="px-5 py-2.5 w-full bg-[#2563EB] text-white rounded-lg hover:bg-[#1d4ed8] transition-colors text-sm font-semibold shadow-sm text-center">{t('drivers.close_profile')}</button>
                           </DialogClose>
                         </DialogFooter>
                       </DialogContent>

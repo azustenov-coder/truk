@@ -202,16 +202,16 @@ export function FleetManagementPage() {
               <DialogTrigger asChild>
                 <button className="flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg text-sm font-medium hover:bg-green-700 transition-colors shadow-sm">
                   <Wrench size={16} />
-                  Schedule Maintenance
+                  {t('fleet.schedule_maintenance')}
                 </button>
               </DialogTrigger>
               <DialogContent className="sm:max-w-[500px]">
                 <DialogHeader>
-                  <DialogTitle>Schedule Maintenance</DialogTitle>
+                  <DialogTitle>{t('fleet.schedule_maintenance')}</DialogTitle>
                 </DialogHeader>
                 <div className="grid gap-5 py-4">
                   <div className="grid gap-2">
-                    <label className="text-sm font-semibold text-gray-700 dark:text-gray-300">Select Vehicle</label>
+                    <label className="text-sm font-semibold text-gray-700 dark:text-gray-300">{t('fleet.select_vehicle')}</label>
                     <select className="px-3 py-2.5 bg-white dark:bg-[#1E293B] border border-gray-200 dark:border-gray-700 rounded-lg text-sm font-medium focus:outline-none focus:ring-2 focus:ring-blue-500 w-full text-gray-900 dark:text-white shadow-sm">
                       <option>FL-4832 (Freightliner Cascadia)</option>
                       <option>TX-7841 (Volvo VNL)</option>
@@ -221,30 +221,30 @@ export function FleetManagementPage() {
                     </select>
                   </div>
                   <div className="grid gap-2">
-                    <label className="text-sm font-semibold text-gray-700 dark:text-gray-300">Maintenance Type</label>
+                    <label className="text-sm font-semibold text-gray-700 dark:text-gray-300">{t('fleet.maintenance_type')}</label>
                     <select className="px-3 py-2.5 bg-white dark:bg-[#1E293B] border border-gray-200 dark:border-gray-700 rounded-lg text-sm font-medium focus:outline-none focus:ring-2 focus:ring-blue-500 w-full text-gray-900 dark:text-white shadow-sm">
-                      <option>Routine Inspection</option>
-                      <option>Oil & Filter Change</option>
-                      <option>Brake Replacement</option>
-                      <option>Engine Repair Diagnostics</option>
+                      <option>{t('fleet.routine_inspection')}</option>
+                      <option>{t('fleet.oil_filter_change')}</option>
+                      <option>{t('fleet.brake_replacement')}</option>
+                      <option>{t('fleet.engine_repair')}</option>
                     </select>
                   </div>
                   <div className="grid grid-cols-2 gap-4">
                     <div className="grid gap-2">
-                      <label className="text-sm font-semibold text-gray-700 dark:text-gray-300">Date</label>
+                      <label className="text-sm font-semibold text-gray-700 dark:text-gray-300">{t('fleet.date')}</label>
                       <input type="date" className="px-3 py-2.5 bg-white dark:bg-[#1E293B] border border-gray-200 dark:border-gray-700 rounded-lg text-sm font-medium focus:outline-none focus:ring-2 focus:ring-blue-500 w-full text-gray-900 dark:text-white shadow-sm" />
                     </div>
                     <div className="grid gap-2">
-                      <label className="text-sm font-semibold text-gray-700 dark:text-gray-300">Time</label>
+                      <label className="text-sm font-semibold text-gray-700 dark:text-gray-300">{t('fleet.time')}</label>
                       <input type="time" className="px-3 py-2.5 bg-white dark:bg-[#1E293B] border border-gray-200 dark:border-gray-700 rounded-lg text-sm font-medium focus:outline-none focus:ring-2 focus:ring-blue-500 w-full text-gray-900 dark:text-white shadow-sm" />
                     </div>
                   </div>
                 </div>
                 <DialogFooter className="mt-2">
                   <DialogClose asChild>
-                    <button className="px-4 py-2 bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors text-sm font-semibold border border-gray-200 dark:border-gray-700 shadow-sm">Cancel</button>
+                    <button className="px-4 py-2 bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors text-sm font-semibold border border-gray-200 dark:border-gray-700 shadow-sm">{t('common.cancel')}</button>
                   </DialogClose>
-                  <button className="px-5 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors text-sm font-semibold shadow-sm ml-2">Schedule</button>
+                  <button className="px-5 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors text-sm font-semibold shadow-sm ml-2">{t('fleet.schedule')}</button>
                 </DialogFooter>
               </DialogContent>
             </Dialog>
@@ -252,26 +252,26 @@ export function FleetManagementPage() {
             <Dialog>
               <DialogTrigger asChild>
                 <button className="flex items-center gap-2 px-4 py-2 bg-[#2563EB] text-white rounded-lg text-sm font-medium hover:bg-[#1d4ed8] transition-colors shadow-sm">
-                  + Add Vehicle
+                  + {t('fleet.add_vehicle')}
                 </button>
               </DialogTrigger>
               <DialogContent className="sm:max-w-[500px]">
                 <DialogHeader>
-                  <DialogTitle>Add New Vehicle</DialogTitle>
+                  <DialogTitle>{t('fleet.add_new_vehicle')}</DialogTitle>
                 </DialogHeader>
                 <div className="grid gap-5 py-4">
                   <div className="grid grid-cols-2 gap-4">
                     <div className="grid gap-2">
-                      <label className="text-sm font-semibold text-gray-700 dark:text-gray-300">Vehicle ID</label>
+                      <label className="text-sm font-semibold text-gray-700 dark:text-gray-300">{t('fleet.vehicle_id')}</label>
                       <input type="text" placeholder="e.g. TRK-1020" className="px-3 py-2.5 bg-white dark:bg-[#1E293B] border border-gray-200 dark:border-gray-700 rounded-lg text-sm font-medium focus:outline-none focus:ring-2 focus:ring-blue-500 w-full text-gray-900 dark:text-white shadow-sm placeholder:text-gray-400" />
                     </div>
                     <div className="grid gap-2">
-                      <label className="text-sm font-semibold text-gray-700 dark:text-gray-300">License Plate</label>
+                      <label className="text-sm font-semibold text-gray-700 dark:text-gray-300">{t('fleet.license_plate')}</label>
                       <input type="text" placeholder="e.g. CA-5522" className="px-3 py-2.5 bg-white dark:bg-[#1E293B] border border-gray-200 dark:border-gray-700 rounded-lg text-sm font-medium focus:outline-none focus:ring-2 focus:ring-blue-500 w-full text-gray-900 dark:text-white shadow-sm placeholder:text-gray-400" />
                     </div>
                   </div>
                   <div className="grid gap-2">
-                    <label className="text-sm font-semibold text-gray-700 dark:text-gray-300">Vehicle Type</label>
+                    <label className="text-sm font-semibold text-gray-700 dark:text-gray-300">{t('fleet.vehicle_type')}</label>
                     <select className="px-3 py-2.5 bg-white dark:bg-[#1E293B] border border-gray-200 dark:border-gray-700 rounded-lg text-sm font-medium focus:outline-none focus:ring-2 focus:ring-blue-500 w-full text-gray-900 dark:text-white shadow-sm">
                       <option>Freightliner Cascadia</option>
                       <option>Volvo VNL</option>
@@ -281,7 +281,7 @@ export function FleetManagementPage() {
                     </select>
                   </div>
                   <div className="grid gap-2">
-                    <label className="text-sm font-semibold text-gray-700 dark:text-gray-300">Hub Location</label>
+                    <label className="text-sm font-semibold text-gray-700 dark:text-gray-300">{t('fleet.hub_location')}</label>
                     <select className="px-3 py-2.5 bg-white dark:bg-[#1E293B] border border-gray-200 dark:border-gray-700 rounded-lg text-sm font-medium focus:outline-none focus:ring-2 focus:ring-blue-500 w-full text-gray-900 dark:text-white shadow-sm">
                       <option>Chicago Hub Terminal</option>
                       <option>Dallas, TX</option>
@@ -293,9 +293,9 @@ export function FleetManagementPage() {
                 </div>
                 <DialogFooter className="mt-2">
                   <DialogClose asChild>
-                    <button className="px-4 py-2 bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors text-sm font-semibold border border-gray-200 dark:border-gray-700 shadow-sm">Cancel</button>
+                    <button className="px-4 py-2 bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors text-sm font-semibold border border-gray-200 dark:border-gray-700 shadow-sm">{t('common.cancel')}</button>
                   </DialogClose>
-                  <button className="px-5 py-2 bg-[#2563EB] text-white rounded-lg hover:bg-[#1d4ed8] transition-colors text-sm font-semibold shadow-sm ml-2">Save Vehicle</button>
+                  <button className="px-5 py-2 bg-[#2563EB] text-white rounded-lg hover:bg-[#1d4ed8] transition-colors text-sm font-semibold shadow-sm ml-2">{t('fleet.save_vehicle')}</button>
                 </DialogFooter>
               </DialogContent>
             </Dialog>
@@ -304,62 +304,102 @@ export function FleetManagementPage() {
 
         {/* KPI Cards */}
         <div className="flex items-center justify-between gap-4 mt-8 pb-4">
-          <div className="flex-1 bg-[#F0F5FF] dark:bg-blue-900/20 rounded-xl p-4 flex items-center justify-between shadow-sm border border-blue-100 dark:border-blue-900/30">
+          <div 
+            onClick={() => {
+              setFilterType('All Types');
+              setFilterStatus('All Status');
+              setGlobalLocationFilter('All Locations');
+              setFilterHealth('All Health');
+            }}
+            className="flex-1 bg-[#F0F5FF] dark:bg-blue-900/20 rounded-xl p-4 flex items-center justify-between shadow-sm border border-blue-100 dark:border-blue-900/30 cursor-pointer hover:bg-blue-100/50 dark:hover:bg-blue-900/40 transition-all active:scale-[0.98]"
+          >
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 bg-white dark:bg-blue-900/40 rounded-lg flex items-center justify-center text-blue-500 shadow-sm border border-blue-50">
                 <Truck size={20} className="text-blue-500" />
               </div>
               <div>
                 <p className="text-xl font-bold text-[#1E3A8A] dark:text-blue-300 leading-none">{totalVehicles}</p>
-                <p className="text-xs font-semibold text-[#1E3A8A]/70 dark:text-blue-400 mt-1 uppercase tracking-wide">Total Vehicles</p>
+                <p className="text-xs font-semibold text-[#1E3A8A]/70 dark:text-blue-400 mt-1 uppercase tracking-wide">{t('fleet.total_vehicles')}</p>
               </div>
             </div>
           </div>
 
-          <div className="flex-1 bg-[#F0FDF4] dark:bg-green-900/20 rounded-xl p-4 flex items-center justify-between shadow-sm border border-green-100 dark:border-green-900/30">
+          <div 
+            onClick={() => {
+              setFilterStatus('Available');
+              setFilterType('All Types');
+              setGlobalLocationFilter('All Locations');
+              setFilterHealth('All Health');
+            }}
+            className="flex-1 bg-[#F0FDF4] dark:bg-green-900/20 rounded-xl p-4 flex items-center justify-between shadow-sm border border-green-100 dark:border-green-900/30 cursor-pointer hover:bg-green-100/50 dark:hover:bg-green-900/40 transition-all active:scale-[0.98]"
+          >
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 bg-white dark:bg-green-900/40 rounded-lg flex items-center justify-center text-green-500 shadow-sm border border-green-50">
                 <Activity size={20} className="text-green-500" />
               </div>
               <div>
                 <p className="text-xl font-bold text-[#166534] dark:text-green-300 leading-none">{available}</p>
-                <p className="text-xs font-semibold text-[#166534]/70 dark:text-green-400 mt-1 uppercase tracking-wide">Available</p>
+                <p className="text-xs font-semibold text-[#166534]/70 dark:text-green-400 mt-1 uppercase tracking-wide">{t('fleet.available')}</p>
               </div>
             </div>
           </div>
 
-          <div className="flex-1 bg-[#FEFCE8] dark:bg-yellow-900/20 rounded-xl p-4 flex items-center justify-between shadow-sm border border-yellow-100 dark:border-yellow-900/30">
+          <div 
+            onClick={() => {
+              setFilterStatus('In Use');
+              setFilterType('All Types');
+              setGlobalLocationFilter('All Locations');
+              setFilterHealth('All Health');
+            }}
+            className="flex-1 bg-[#FEFCE8] dark:bg-yellow-900/20 rounded-xl p-4 flex items-center justify-between shadow-sm border border-yellow-100 dark:border-yellow-900/30 cursor-pointer hover:bg-yellow-100/50 dark:hover:bg-yellow-900/40 transition-all active:scale-[0.98]"
+          >
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 bg-white dark:bg-yellow-900/40 rounded-lg flex items-center justify-center text-yellow-500 shadow-sm border border-yellow-50">
                 <TrendingUp size={20} className="text-yellow-500" />
               </div>
               <div>
-                <p className="text-xl font-bold text-[#854D0E] dark:text-yellow-300 leading-none">{filteredVehicles.filter(v => v.status === 'In Use').length}</p>
-                <p className="text-xs font-semibold text-[#854D0E]/70 dark:text-yellow-400 mt-1 uppercase tracking-wide">In Use</p>
+                <p className="text-xl font-bold text-[#854D0E] dark:text-yellow-300 leading-none">{mockVehicles.filter(v => v.status === 'In Use').length}</p>
+                <p className="text-xs font-semibold text-[#854D0E]/70 dark:text-yellow-400 mt-1 uppercase tracking-wide">{t('fleet.in_use')}</p>
               </div>
             </div>
           </div>
 
-          <div className="flex-1 bg-[#FEF2F2] dark:bg-red-900/20 rounded-xl p-4 flex items-center justify-between shadow-sm border border-red-100 dark:border-red-900/30">
+          <div 
+            onClick={() => {
+              setFilterStatus('Maintenance');
+              setFilterType('All Types');
+              setGlobalLocationFilter('All Locations');
+              setFilterHealth('All Health');
+            }}
+            className="flex-1 bg-[#FEF2F2] dark:bg-red-900/20 rounded-xl p-4 flex items-center justify-between shadow-sm border border-red-100 dark:border-red-900/30 cursor-pointer hover:bg-red-100/50 dark:hover:bg-red-900/40 transition-all active:scale-[0.98]"
+          >
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 bg-white dark:bg-red-900/40 rounded-lg flex items-center justify-center text-red-500 shadow-sm border border-red-50">
                 <AlertTriangle size={20} className="text-red-500" />
               </div>
               <div>
                 <p className="text-xl font-bold text-[#991B1B] dark:text-red-300 leading-none">{inMaintenance}</p>
-                <p className="text-xs font-semibold text-[#991B1B]/70 dark:text-red-400 mt-1 uppercase tracking-wide">Maintenance</p>
+                <p className="text-xs font-semibold text-[#991B1B]/70 dark:text-red-400 mt-1 uppercase tracking-wide">{t('fleet.maintenance')}</p>
               </div>
             </div>
           </div>
 
-          <div className="flex-1 bg-[#FAF5FF] dark:bg-purple-900/20 rounded-xl p-4 flex items-center justify-between shadow-sm border border-purple-100 dark:border-purple-900/30">
+          <div 
+            onClick={() => {
+              setFilterHealth('Good');
+              setFilterType('All Types');
+              setFilterStatus('All Status');
+              setGlobalLocationFilter('All Locations');
+            }}
+            className="flex-1 bg-[#FAF5FF] dark:bg-purple-900/20 rounded-xl p-4 flex items-center justify-between shadow-sm border border-purple-100 dark:border-purple-900/30 cursor-pointer hover:bg-purple-100/50 dark:hover:bg-purple-900/40 transition-all active:scale-[0.98]"
+          >
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 bg-white dark:bg-purple-900/40 rounded-lg flex items-center justify-center text-purple-500 shadow-sm border border-purple-50">
                 <Gauge size={20} className="text-purple-500" />
               </div>
               <div>
                 <p className="text-xl font-bold text-[#6B21A8] dark:text-purple-300 leading-none">{healthScore}%</p>
-                <p className="text-xs font-semibold text-[#6B21A8]/70 dark:text-purple-400 mt-1 uppercase tracking-wide">Health Score</p>
+                <p className="text-xs font-semibold text-[#6B21A8]/70 dark:text-purple-400 mt-1 uppercase tracking-wide">{t('fleet.health_score')}</p>
               </div>
             </div>
           </div>
@@ -513,7 +553,7 @@ export function FleetManagementPage() {
                             {vehicle.driver.name}
                           </p>
                           <p className="text-[11px] font-medium text-gray-500 dark:text-gray-400">
-                            On Route
+                            {t('fleet.on_route')}
                           </p>
                         </div>
                       </div>
@@ -523,7 +563,7 @@ export function FleetManagementPage() {
                           <span className="text-[10px] font-bold">?</span>
                         </div>
                         <span className="text-[13px] font-medium text-gray-400 dark:text-gray-500">
-                          Unassigned
+                          {t('fleet.unassigned')}
                         </span>
                       </div>
                     )}
@@ -553,12 +593,12 @@ export function FleetManagementPage() {
                     <Dialog>
                       <DialogTrigger asChild>
                         <button className="text-[#3B82F6] hover:text-[#2563EB] hover:underline text-[13px] font-semibold transition-all mr-2 outline-none">
-                          View Details
+                          {t('fleet.view_details_vehicle')}
                         </button>
                       </DialogTrigger>
                       <DialogContent className="sm:max-w-[425px]">
                         <DialogHeader>
-                          <DialogTitle>Vehicle Details Overview</DialogTitle>
+                          <DialogTitle>{t('fleet.view_details_vehicle')}</DialogTitle>
                         </DialogHeader>
                         <div className="space-y-5 py-3 text-left">
                           <div className="flex items-center gap-4 bg-gray-50 dark:bg-gray-800/50 p-4 rounded-xl border border-gray-100 dark:border-gray-800">
@@ -573,32 +613,36 @@ export function FleetManagementPage() {
 
                           <div className="grid grid-cols-2 gap-3">
                             <div className="bg-gray-50 dark:bg-[#0F172A] p-3.5 rounded-xl border border-gray-100 dark:border-gray-800">
-                              <p className="text-[11px] text-gray-500 dark:text-gray-400 font-bold uppercase tracking-wider">Status</p>
-                              <p className="text-sm font-bold text-gray-900 dark:text-gray-100 mt-1.5">{vehicle.status}</p>
+                              <p className="text-[11px] text-gray-500 dark:text-gray-400 font-bold uppercase tracking-wider">{t('common.status')}</p>
+                              <p className="text-sm font-bold text-gray-900 dark:text-gray-100 mt-1.5">
+                                {vehicle.status === 'Available' ? t('fleet.available') :
+                                 vehicle.status === 'In Use' ? t('fleet.in_use') :
+                                 t('fleet.maintenance')}
+                              </p>
                             </div>
                             <div className="bg-gray-50 dark:bg-[#0F172A] p-3.5 rounded-xl border border-gray-100 dark:border-gray-800">
-                              <p className="text-[11px] text-gray-500 dark:text-gray-400 font-bold uppercase tracking-wider">Health</p>
+                              <p className="text-[11px] text-gray-500 dark:text-gray-400 font-bold uppercase tracking-wider">{t('common.health')}</p>
                               <div className="flex items-center gap-2 mt-1.5">
                                 <div className="w-2 h-2 rounded-full shadow-sm" style={{ backgroundColor: vehicle.health === 'Good' ? '#10B981' : vehicle.health === 'Warning' ? '#F59E0B' : '#EF4444' }} />
-                                <p className="text-sm font-bold text-gray-900 dark:text-gray-100">{vehicle.health}</p>
+                                <p className="text-sm font-bold text-gray-900 dark:text-gray-100">{t(`fleet.${vehicle.health.toLowerCase()}`)}</p>
                               </div>
                             </div>
                             <div className="bg-gray-50 dark:bg-[#0F172A] p-3.5 rounded-xl border border-gray-100 dark:border-gray-800 col-span-2 flex justify-between items-center">
                               <div>
-                                <p className="text-[11px] text-gray-500 dark:text-gray-400 font-bold uppercase tracking-wider">Driver Assigned</p>
+                                <p className="text-[11px] text-gray-500 dark:text-gray-400 font-bold uppercase tracking-wider">{t('fleet.assigned_driver')}</p>
                                 <p className="text-sm font-bold text-gray-900 dark:text-gray-100 mt-1.5 flex items-center gap-2.5">
                                   {vehicle.driver ? (
                                     <>
                                       <span className="w-5 h-5 flex items-center justify-center rounded-full bg-gray-200 dark:bg-gray-700 overflow-hidden">{getDriverIcon(vehicle.driver.name)}</span>
                                       {vehicle.driver.name}
                                     </>
-                                  ) : "Unassigned"}
+                                  ) : t('fleet.unassigned')}
                                 </p>
                               </div>
-                              <button className="text-blue-600 hover:text-blue-800 text-xs font-semibold">Reassign</button>
+                              <button className="text-blue-600 hover:text-blue-800 text-xs font-semibold">{t('fleet.reassign')}</button>
                             </div>
                             <div className="bg-gray-50 dark:bg-[#0F172A] p-3.5 rounded-xl border border-gray-100 dark:border-gray-800 col-span-2">
-                              <p className="text-[11px] text-gray-500 dark:text-gray-400 font-bold uppercase tracking-wider">Current Location</p>
+                              <p className="text-[11px] text-gray-500 dark:text-gray-400 font-bold uppercase tracking-wider">{t('fleet.location')}</p>
                               <div className="flex justify-between items-center mt-1.5">
                                 <p className="text-sm font-bold text-gray-900 dark:text-gray-100 flex items-center gap-1.5">
                                   <MapPin size={16} className="text-red-500" /> {vehicle.location}
@@ -610,7 +654,7 @@ export function FleetManagementPage() {
                         </div>
                         <DialogFooter className="mt-2 text-right">
                           <DialogClose asChild>
-                            <button className="px-5 py-2 w-full bg-[#2563EB] text-white rounded-lg hover:bg-[#1d4ed8] transition-colors text-sm font-semibold shadow-sm text-center">Done</button>
+                            <button className="px-5 py-2 w-full bg-[#2563EB] text-white rounded-lg hover:bg-[#1d4ed8] transition-colors text-sm font-semibold shadow-sm text-center">{t('common.done')}</button>
                           </DialogClose>
                         </DialogFooter>
                       </DialogContent>

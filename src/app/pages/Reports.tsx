@@ -7,6 +7,8 @@ import {
   FileText,
   FileSpreadsheet
 } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
+import * as XLSX from 'xlsx';
 import {
   LineChart,
   Line,
@@ -42,9 +44,31 @@ const accessorialsData = [
 ];
 
 export function ReportsPage() {
+  const { t } = useTranslation();
   const [showRevenueSummary, setShowRevenueSummary] = useState(false);
   const [showMarginSummary, setShowMarginSummary] = useState(false);
   const [showAccessorialsSummary, setShowAccessorialsSummary] = useState(false);
+
+  const exportChartData = (data: any[], fileName: string, sheetName: string) => {
+    const worksheet = XLSX.utils.json_to_sheet(data);
+    
+    // AutoFit columns
+    const maxWidths = data.reduce((acc: any, row: any) => {
+      Object.keys(row).forEach((key, i) => {
+        const val = row[key] ? row[key].toString() : '';
+        const width = Math.max(acc[i] || 10, val.length + 2, key.length + 2);
+        acc[i] = width;
+      });
+      return acc;
+    }, []);
+    worksheet['!cols'] = maxWidths.map((w: number) => ({ wch: w }));
+
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, sheetName);
+    
+    // Robust download using XLSX.writeFile
+    XLSX.writeFile(workbook, `${fileName}_${new Date().toISOString().split('T')[0]}.xlsx`);
+  };
 
   return (
     <div className="flex flex-col h-full bg-gray-50 dark:bg-[#0F172A]">
@@ -53,20 +77,20 @@ export function ReportsPage() {
         <div className="flex items-center justify-between">
           <div>
             <h1 className="text-2xl font-bold tracking-tight text-gray-900 dark:text-white uppercase">
-              REPORTS
+              {t('reports.title')}
             </h1>
             <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
-              Reports module with chart-first design for operational and financial analysis
+              {t('reports.subtitle')}
             </p>
           </div>
           <div className="flex items-center gap-3">
             <button className="flex items-center gap-2 px-4 py-2 border border-gray-200 dark:border-gray-700 rounded-lg text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors bg-white dark:bg-[#1E293B] shadow-sm">
               <Download size={16} />
-              Bulk Export
+              {t('reports.bulk_export')}
             </button>
             <button className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700 transition-colors shadow-sm">
               <Plus size={16} />
-              Custom Report
+              {t('reports.custom_report')}
             </button>
           </div>
         </div>
@@ -86,17 +110,17 @@ export function ReportsPage() {
           </div>
 
           <div className="flex items-center gap-2 px-3 py-2 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg cursor-pointer font-medium min-w-[140px] justify-between">
-            <span className="text-sm text-gray-700 dark:text-gray-300">All Departments</span>
+            <span className="text-sm text-gray-700 dark:text-gray-300">{t('reports.all_departments')}</span>
             <ChevronDown size={14} className="text-gray-400" />
           </div>
 
           <div className="flex items-center gap-2 px-3 py-2 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg cursor-pointer font-medium min-w-[120px] justify-between">
-            <span className="text-sm text-gray-700 dark:text-gray-300">All Types</span>
+            <span className="text-sm text-gray-700 dark:text-gray-300">{t('fleet.all_types')}</span>
             <ChevronDown size={14} className="text-gray-400" />
           </div>
 
           <button className="text-sm text-gray-500 hover:text-gray-700 dark:hover:text-gray-300 px-2 font-medium">
-            Clear Filters
+            {t('common.clear_all')}
           </button>
         </div>
       </div>
@@ -104,16 +128,16 @@ export function ReportsPage() {
       <div className="flex-1 overflow-auto p-6">
         {/* Financial Reports Section */}
         <div className="flex items-center justify-between mb-4">
-          <h2 className="text-lg font-semibold text-gray-900 dark:text-white">Financial Reports</h2>
-          <span className="text-sm text-gray-500 dark:text-gray-400">Revenue analysis and financial metrics</span>
+          <h2 className="text-lg font-semibold text-gray-900 dark:text-white">{t('reports.financial_reports')}</h2>
+          <span className="text-sm text-gray-500 dark:text-gray-400">{t('reports.financial_desc')}</span>
         </div>
 
         <div className="grid grid-cols-3 gap-6">
           {/* Revenue Trends Card */}
           <div className="bg-white dark:bg-[#1E293B] rounded-2xl border border-gray-200 dark:border-gray-800 p-6 shadow-sm flex flex-col">
             <div className="flex items-center justify-between mb-6">
-              <h3 className="font-semibold text-gray-900 dark:text-white text-base">Revenue Trends</h3>
-              <span className="text-xs px-2.5 py-1 bg-gray-100 dark:bg-gray-800 text-gray-500 dark:text-gray-400 rounded-full font-medium">Last 6 months</span>
+              <h3 className="font-semibold text-gray-900 dark:text-white text-base">{t('reports.revenue_trends')}</h3>
+              <span className="text-xs px-2.5 py-1 bg-gray-100 dark:bg-gray-800 text-gray-500 dark:text-gray-400 rounded-full font-medium">{t('reports.last_6_months')}</span>
             </div>
 
             <div className="h-48 w-full">
@@ -133,15 +157,15 @@ export function ReportsPage() {
             <div className="flex justify-between items-end mt-6">
               <div>
                 <p className="text-2xl font-bold text-[#10B981] mb-1">$2.4M</p>
-                <p className="text-xs text-gray-400 font-medium">Total Revenue</p>
+                <p className="text-xs text-gray-400 font-medium">{t('reports.total_revenue')}</p>
               </div>
               <div className="text-center">
                 <p className="text-xl font-bold text-[#3B82F6] mb-1">+12.5%</p>
-                <p className="text-xs text-gray-400 font-medium">Growth Rate</p>
+                <p className="text-xs text-gray-400 font-medium">{t('reports.growth_rate')}</p>
               </div>
               <div className="text-right">
                 <p className="text-xl font-bold text-gray-900 dark:text-white mb-1">$425K</p>
-                <p className="text-xs text-gray-400 font-medium">This Month</p>
+                <p className="text-xs text-gray-400 font-medium">{t('reports.this_month')}</p>
               </div>
             </div>
 
@@ -154,14 +178,14 @@ export function ReportsPage() {
                   <FileText size={14} /> PDF
                 </button>
                 <button
-                  onClick={() => alert('Downloading Revenue Trends data as CSV...')}
+                  onClick={() => exportChartData(revenueData, 'Truk_Revenue_Trends', t('reports.revenue'))}
                   className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-md bg-[#10B981] text-white text-xs font-semibold hover:bg-green-600 transition-colors shadow-sm focus:outline-none"
                 >
-                  <FileSpreadsheet size={14} /> CSV
+                  <FileSpreadsheet size={14} /> EXCEL
                 </button>
               </div>
               <button className="text-sm font-semibold text-[#3B82F6] hover:text-blue-700 transition-colors">
-                View Details
+                {t('common.view_details')}
               </button>
             </div>
 
@@ -170,13 +194,13 @@ export function ReportsPage() {
                 onClick={() => setShowRevenueSummary(!showRevenueSummary)}
                 className="text-sm font-semibold text-[#3B82F6] hover:underline transition-all focus:outline-none"
               >
-                Toggle AI Summary
+                {t('reports.toggle_ai')}
               </button>
             </div>
             {showRevenueSummary && (
               <div className="mt-4 p-4 bg-blue-50 dark:bg-blue-900/20 rounded-xl border border-blue-100 dark:border-blue-800">
                 <p className="text-sm text-blue-800 dark:text-blue-300">
-                  <span className="font-bold">AI Analysis:</span> Revenue has been growing steadily by 12.5% this quarter, largely driven by optimized route planning and higher delivery success rates.
+                  <span className="font-bold">{t('reports.ai_analysis')}:</span> Revenue has been growing steadily by 12.5% this quarter, largely driven by optimized route planning and higher delivery success rates.
                 </p>
               </div>
             )}
@@ -185,8 +209,8 @@ export function ReportsPage() {
           {/* Margin Analysis Card */}
           <div className="bg-white dark:bg-[#1E293B] rounded-2xl border border-gray-200 dark:border-gray-800 p-6 shadow-sm flex flex-col">
             <div className="flex items-center justify-between mb-6">
-              <h3 className="font-semibold text-gray-900 dark:text-white text-base">Margin Analysis</h3>
-              <span className="text-xs px-2.5 py-1 bg-gray-100 dark:bg-gray-800 text-gray-500 dark:text-gray-400 rounded-full font-medium">Last 3 months</span>
+              <h3 className="font-semibold text-gray-900 dark:text-white text-base">{t('reports.margin_analysis')}</h3>
+              <span className="text-xs px-2.5 py-1 bg-gray-100 dark:bg-gray-800 text-gray-500 dark:text-gray-400 rounded-full font-medium">{t('reports.last_3_months')}</span>
             </div>
 
             <div className="h-48 w-full">
@@ -208,15 +232,15 @@ export function ReportsPage() {
             <div className="flex justify-between items-end mt-6">
               <div>
                 <p className="text-2xl font-bold text-[#10B981] mb-1">18.2%</p>
-                <p className="text-xs text-gray-400 font-medium">Gross Margin</p>
+                <p className="text-xs text-gray-400 font-medium">{t('reports.gross_margin')}</p>
               </div>
               <div className="text-center">
                 <p className="text-xl font-bold text-[#3B82F6] mb-1">12.7%</p>
-                <p className="text-xs text-gray-400 font-medium">Net Margin</p>
+                <p className="text-xs text-gray-400 font-medium">{t('reports.net_margin')}</p>
               </div>
               <div className="text-right">
                 <p className="text-xl font-bold text-gray-900 dark:text-white mb-1">+1.3%</p>
-                <p className="text-xs text-gray-400 font-medium">vs Last Quarter</p>
+                <p className="text-xs text-gray-400 font-medium">{t('reports.vs_last_quarter')}</p>
               </div>
             </div>
 
@@ -229,14 +253,14 @@ export function ReportsPage() {
                   <FileText size={14} /> PDF
                 </button>
                 <button
-                  onClick={() => alert('Downloading Margin Analysis data as CSV...')}
+                  onClick={() => exportChartData(marginData, 'Truk_Margin_Analysis', t('reports.margin'))}
                   className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-md bg-[#10B981] text-white text-xs font-semibold hover:bg-green-600 transition-colors shadow-sm focus:outline-none"
                 >
-                  <FileSpreadsheet size={14} /> CSV
+                  <FileSpreadsheet size={14} /> EXCEL
                 </button>
               </div>
               <button className="text-sm font-semibold text-[#3B82F6] hover:text-blue-700 transition-colors">
-                View Details
+                {t('common.view_details')}
               </button>
             </div>
 
@@ -245,13 +269,13 @@ export function ReportsPage() {
                 onClick={() => setShowMarginSummary(!showMarginSummary)}
                 className="text-sm font-semibold text-[#3B82F6] hover:underline transition-all focus:outline-none"
               >
-                Toggle AI Summary
+                {t('reports.toggle_ai')}
               </button>
             </div>
             {showMarginSummary && (
               <div className="mt-4 p-4 bg-blue-50 dark:bg-blue-900/20 rounded-xl border border-blue-100 dark:border-blue-800">
                 <p className="text-sm text-blue-800 dark:text-blue-300">
-                  <span className="font-bold">AI Analysis:</span> Gross margins have stabilized around 18.2%, but net margins improved +1.3% due to reduced fuel expenses and better preventive maintenance.
+                  <span className="font-bold">{t('reports.ai_analysis')}:</span> Gross margins have stabilized around 18.2%, but net margins improved +1.3% due to reduced fuel expenses and better preventive maintenance.
                 </p>
               </div>
             )}
@@ -260,8 +284,8 @@ export function ReportsPage() {
           {/* Accessorials Card */}
           <div className="bg-white dark:bg-[#1E293B] rounded-2xl border border-gray-200 dark:border-gray-800 p-6 shadow-sm flex flex-col">
             <div className="flex items-center justify-between mb-6">
-              <h3 className="font-semibold text-gray-900 dark:text-white text-base">Accessorials</h3>
-              <span className="text-xs px-2.5 py-1 bg-gray-100 dark:bg-gray-800 text-gray-500 dark:text-gray-400 rounded-full font-medium">Last 30 days</span>
+              <h3 className="font-semibold text-gray-900 dark:text-white text-base">{t('reports.accessorials')}</h3>
+              <span className="text-xs px-2.5 py-1 bg-gray-100 dark:bg-gray-800 text-gray-500 dark:text-gray-400 rounded-full font-medium">{t('reports.last_30_days')}</span>
             </div>
 
             <div className="h-48 w-full">
@@ -282,15 +306,15 @@ export function ReportsPage() {
             <div className="flex justify-between items-end mt-6">
               <div>
                 <p className="text-2xl font-bold text-[#10B981] mb-1">$87.5K</p>
-                <p className="text-xs text-gray-400 font-medium">Total Revenue</p>
+                <p className="text-xs text-gray-400 font-medium">{t('reports.total_revenue')}</p>
               </div>
               <div className="text-center">
                 <p className="text-xl font-bold text-[#3B82F6] mb-1">22.3%</p>
-                <p className="text-xs text-gray-400 font-medium">of Total Revenue</p>
+                <p className="text-xs text-gray-400 font-medium">{t('reports.of_total_revenue')}</p>
               </div>
               <div className="text-right">
                 <p className="text-xl font-bold text-gray-900 dark:text-white mb-1">156</p>
-                <p className="text-xs text-gray-400 font-medium">Total Charges</p>
+                <p className="text-xs text-gray-400 font-medium">{t('reports.total_charges')}</p>
               </div>
             </div>
 
@@ -303,14 +327,14 @@ export function ReportsPage() {
                   <FileText size={14} /> PDF
                 </button>
                 <button
-                  onClick={() => alert('Downloading Accessorials data as CSV...')}
+                  onClick={() => exportChartData(accessorialsData, 'Truk_Accessorials', t('reports.accessorials'))}
                   className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-md bg-[#10B981] text-white text-xs font-semibold hover:bg-green-600 transition-colors shadow-sm focus:outline-none"
                 >
-                  <FileSpreadsheet size={14} /> CSV
+                  <FileSpreadsheet size={14} /> EXCEL
                 </button>
               </div>
               <button className="text-sm font-semibold text-[#3B82F6] hover:text-blue-700 transition-colors">
-                View Details
+                {t('common.view_details')}
               </button>
             </div>
 
@@ -319,13 +343,13 @@ export function ReportsPage() {
                 onClick={() => setShowAccessorialsSummary(!showAccessorialsSummary)}
                 className="text-sm font-semibold text-[#3B82F6] hover:underline transition-all focus:outline-none"
               >
-                Toggle AI Summary
+                {t('reports.toggle_ai')}
               </button>
             </div>
             {showAccessorialsSummary && (
               <div className="mt-4 p-4 bg-blue-50 dark:bg-blue-900/20 rounded-xl border border-blue-100 dark:border-blue-800">
                 <p className="text-sm text-blue-800 dark:text-blue-300">
-                  <span className="font-bold">AI Analysis:</span> Detention accounts for the largest portion of accessorials (39%). Consider renegotiating detention terms with your top 3 consistently delayed facilities.
+                  <span className="font-bold">{t('reports.ai_analysis')}:</span> Detention accounts for the largest portion of accessorials (39%). Consider renegotiating detention terms with your top 3 consistently delayed facilities.
                 </p>
               </div>
             )}

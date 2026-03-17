@@ -20,6 +20,12 @@ import { MapContainer, TileLayer, Marker } from 'react-leaflet';
 import 'leaflet/dist/leaflet.css';
 import L from 'leaflet';
 import { useTranslation } from 'react-i18next';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import axios from 'axios';
+import { useState } from 'react';
+import { useNavigate } from 'react-router';
+import { formatDistanceToNow } from 'date-fns';
+import { uz, enUS } from 'date-fns/locale';
 import {
   Dialog,
   DialogContent,
@@ -49,10 +55,10 @@ const createDashboardIcon = (text: string, color: string) => {
           <div class="w-5 h-5 ${bgClass} rounded-full border-2 border-white shadow-md z-10 flex items-center justify-center">
             <div class="w-1.5 h-1.5 bg-white rounded-full"></div>
           </div>
-          <div class="w-5 h-5 ${bgClass} rounded-full animate-ping absolute top-0 left-0 -z-10 opacity-60"></div>
-          <div class="absolute bottom-7 left-1/2 -translate-x-1/2 bg-white px-2.5 py-1 rounded shadow-md text-[10px] font-bold whitespace-nowrap text-gray-800 border border-gray-100 flex items-center">
+          <div class="w-8 h-8 ${bgClass} rounded-full animate-ping absolute -top-1.5 -left-1.5 -z-10 opacity-30"></div>
+          <div class="absolute bottom-7 left-1/2 -translate-x-1/2 bg-white/90 dark:bg-slate-800/90 backdrop-blur-sm px-2.5 py-1 rounded shadow-xl text-[10px] font-bold whitespace-nowrap text-gray-800 dark:text-white border border-white/20 flex items-center">
             ${text}
-            <div class="absolute top-full left-1/2 -translate-x-1/2 w-0 h-0 border-l-[4px] border-r-[4px] border-t-[4px] border-transparent border-t-white"></div>
+            <div class="absolute top-full left-1/2 -translate-x-1/2 w-0 h-0 border-l-[4px] border-r-[4px] border-t-[4px] border-transparent border-t-white/90 dark:border-t-slate-800/90"></div>
           </div>
         </div>
       </div>
@@ -71,68 +77,107 @@ const mockMapMarkers = [
   { id: '6', label: 'NY-1847', lat: 43.2994, lng: -74.2179, color: 'orange' },
 ];
 
-const dispatchData = [
-  { id: 'LD-2024-001847', route: 'Chicago → Atlanta', driver: 'Mike Rodriguez', status: 'In Transit', sf: 'bg-green-100 text-green-700 dark:bg-green-900/40 dark:text-green-400' },
-  { id: 'LD-2024-001848', route: 'Dallas → Phoenix', driver: 'Jennifer Chen', status: 'Assigned', sf: 'bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-400' },
-  { id: 'LD-2024-001849', route: 'Los Angeles → Seattle', driver: 'David Thompson', status: 'Loading', sf: 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/40 dark:text-yellow-400' },
-  { id: 'LD-2024-001850', route: 'Miami → Jacksonville', driver: 'Maria Santos', status: 'Delivered', sf: 'bg-purple-100 text-purple-700 dark:bg-purple-900/40 dark:text-purple-400' },
-  { id: 'LD-2024-001851', route: 'Houston → New Orleans', driver: 'Robert Wilson', status: 'Unassigned', sf: 'bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-400' },
-  { id: 'LD-2024-001852', route: 'Denver → Kansas City', driver: 'Lisa Anderson', status: 'In Transit', sf: 'bg-green-100 text-green-700 dark:bg-green-900/40 dark:text-green-400' },
-  { id: 'LD-2024-001853', route: 'Portland → San Francisco', driver: 'James Martinez', status: 'Assigned', sf: 'bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-400' },
-  { id: 'LD-2024-001854', route: 'Nashville → Memphis', driver: 'Amanda Taylor', status: 'Loading', sf: 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/40 dark:text-yellow-400' },
-];
+const fetchStats = async () => (await axios.get('http://localhost:3001/api/stats')).data;
+const fetchLoads = async () => (await axios.get('http://localhost:3001/api/loads')).data;
+const fetchNotifications = async () => (await axios.get('http://localhost:3001/api/notifications')).data;
 
 export function DashboardPage() {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
+  const navigate = useNavigate();
+  const queryClient = useQueryClient();
+
+  const { data: stats, isLoading: statsLoading } = useQuery({
+    queryKey: ['stats'],
+    queryFn: fetchStats,
+    refetchInterval: 5000,
+  });
+
+  const { data: loads, isLoading: loadsLoading } = useQuery({
+    queryKey: ['loads'],
+    queryFn: fetchLoads,
+    refetchInterval: 5000,
+  });
+
+  const { data: notifications, isLoading: notificationsLoading } = useQuery({
+    queryKey: ['notifications'],
+    queryFn: fetchNotifications,
+    refetchInterval: 10000,
+  });
+
+  const [showAlertsDialog, setShowAlertsDialog] = useState(false);
+  const [newLoadData, setNewLoadData] = useState({
+    customer: '',
+    origin: { city: '', state: '', location: 'Main Hub' },
+    destination: { city: '', state: '', location: 'Main DC' },
+    eta: '2024-03-20',
+    price: 1500
+  });
+
+  const createLoadMutation = useMutation({
+    mutationFn: (load: any) => axios.post('/api/loads', load),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['loads'] });
+      queryClient.invalidateQueries({ queryKey: ['stats'] });
+    }
+  });
+
+  const kpis = [
+    { title: t('dashboard.kpis.active_loads'), val: statsLoading ? "..." : stats?.activeLoads, stat: t('dashboard.kpis.active_loads_stat'), statColor: "text-blue-500", Icon: Package, color: "text-blue-500", bg: "bg-blue-500/10", status: 'ACTIVE' },
+    { title: t('dashboard.kpis.completed'), val: statsLoading ? "..." : stats?.completedDeliveries, stat: t('dashboard.kpis.completed_stat'), statColor: "text-emerald-500", Icon: Truck, color: "text-emerald-500", bg: "bg-emerald-500/10", status: 'DELIVERED' },
+    { title: t('dashboard.kpis.revenue'), val: statsLoading ? "..." : `$${((stats?.totalRevenue || 0) / 1000).toFixed(1)}K`, stat: t('dashboard.kpis.revenue_stat'), statColor: "text-purple-500", Icon: DollarSign, color: "text-purple-500", bg: "bg-purple-500/10" },
+    { title: t('dashboard.kpis.alerts'), val: statsLoading ? "..." : (stats?.totalAlerts || 0), stat: t('dashboard.kpis.alerts_stat', { count: stats?.criticalAlerts || 0 }), statColor: "text-red-500", Icon: AlertTriangle, color: "text-red-500", bg: "bg-red-500/10", onClick: () => setShowAlertsDialog(true) },
+    { title: t('dashboard.kpis.on_time'), val: statsLoading ? "..." : (stats?.onTimeRate || "96.4%"), stat: t('dashboard.kpis.on_time_stat'), statColor: "text-indigo-500", Icon: BarChart3, color: "text-indigo-500", bg: "bg-indigo-500/10" },
+    { title: t('dashboard.kpis.vehicles'), val: statsLoading ? "..." : (stats?.activeVehicles || 0), stat: t('dashboard.kpis.vehicles_stat'), statColor: "text-emerald-500", Icon: Truck, color: "text-emerald-500", bg: "bg-emerald-500/10" },
+  ];
 
   return (
-    <div className="p-6 space-y-6 bg-gray-50/50 dark:bg-transparent min-h-[calc(100vh-4rem)]">
-      {/* Top KPI Cards Row */}
+    <div className="p-6 space-y-6 min-h-[calc(100vh-4rem)]">
+      {/* KPI Cards */}
       <div className="grid grid-cols-2 lg:grid-cols-6 gap-4">
-        {[
-          { title: "Active Loads", val: "247", stat: "↑ 12% from yesterday", statColor: "text-green-500", Icon: Package, color: "text-blue-500", bg: "bg-blue-50 dark:bg-blue-500/10" },
-          { title: "Active Vehicles", val: "89", stat: "↑ 2.1% this week", statColor: "text-green-500", Icon: Truck, color: "text-emerald-500", bg: "bg-emerald-50 dark:bg-emerald-500/10" },
-          { title: "Total Drivers", val: "156", stat: "of 156 total", statColor: "text-gray-500", Icon: Users, color: "text-purple-500", bg: "bg-purple-50 dark:bg-purple-500/10" },
-          { title: "System Alerts", val: "12", stat: "3 critical alerts", statColor: "text-red-500", Icon: AlertTriangle, color: "text-red-500", bg: "bg-red-50 dark:bg-red-500/10" },
-          { title: "Daily Revenue", val: "$18.4K", stat: "↑ 8% vs target", statColor: "text-green-500", Icon: DollarSign, color: "text-amber-500", bg: "bg-amber-50 dark:bg-amber-500/10" },
-          { title: "On-Time Delivery", val: "96.4%", stat: "↑ 15% vs last month", statColor: "text-green-500", Icon: BarChart3, color: "text-indigo-500", bg: "bg-indigo-50 dark:bg-indigo-500/10" },
-        ].map((item, i) => (
-          <div key={i} className="bg-white dark:bg-[#1E293B] rounded-[16px] p-4 border border-gray-100 dark:border-gray-800 shadow-sm flex flex-col justify-between hover:shadow-md transition-shadow">
+        {kpis.map((item, i) => (
+          <div 
+            key={i} 
+            onClick={() => {
+              if (item.status) navigate(`/dashboard/orders?status=${item.status}`);
+              if (item.onClick) item.onClick();
+            }}
+            className={`bg-white/80 dark:bg-slate-900/80 backdrop-blur-md rounded-[24px] p-5 border border-gray-100 dark:border-white/10 flex flex-col justify-between hover:translate-y-[-4px] transition-all duration-300 shadow-sm ${item.status || item.onClick ? 'cursor-pointer hover:border-blue-500/50' : ''}`}
+          >
             <div className="flex justify-between items-start">
-              <div>
-                <p className="text-2xl font-black text-gray-900 dark:text-white tracking-tight">{item.val}</p>
-                <p className="text-[11px] font-bold uppercase tracking-wider text-gray-500 mt-1">{item.title}</p>
-              </div>
-              <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${item.bg}`}>
+              <div className={`w-10 h-10 rounded-2xl flex items-center justify-center ${item.bg}`}>
                 <item.Icon size={20} className={item.color} />
               </div>
             </div>
-            <p className={`text-xs font-bold mt-4 flex items-center ${item.statColor}`}>
-              {item.stat}
+            <div className="mt-4">
+              <p className="text-3xl font-black text-gray-900 dark:text-white tracking-tighter leading-none">{item.val}</p>
+              <p className="text-[11px] font-bold uppercase tracking-widest text-gray-400 dark:text-slate-400 mt-2">{item.title}</p>
+            </div>
+            <p className={`text-[11px] font-black mt-4 flex items-center gap-1.5 ${item.statColor}`}>
+              <TrendingUp size={10} /> {item.stat}
             </p>
           </div>
         ))}
       </div>
 
-      {/* Main Map & Dispatch Row */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Live Operations Map (col-span-2) */}
-        <div className="lg:col-span-2 bg-white dark:bg-[#1E293B] rounded-[20px] shadow-sm border border-gray-100 dark:border-gray-800 flex flex-col overflow-hidden">
-          <div className="px-6 py-5 border-b border-gray-100 dark:border-gray-800">
-            <h2 className="text-lg font-black tracking-tight text-gray-900 dark:text-white">Live Operations</h2>
+        {/* Map */}
+        <div className="lg:col-span-2 bg-white/80 dark:bg-slate-900/80 backdrop-blur-md rounded-[32px] overflow-hidden border border-gray-100 dark:border-white/10 flex flex-col min-h-[600px] relative">
+          <div className="px-8 py-6 border-b border-gray-100 dark:border-white/10 flex items-center justify-between">
+            <h2 className="text-xl font-black tracking-tighter text-gray-900 dark:text-white">{t('dashboard.terminal.title')}</h2>
+            <div className="flex gap-2">
+              <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse"></span>
+              <span className="text-[10px] font-bold text-emerald-500 uppercase tracking-widest">{t('dashboard.terminal.status')}</span>
+            </div>
           </div>
-          <div className="flex-1 relative min-h-[550px] bg-gray-50 dark:bg-gray-900 p-4">
-            <div className="absolute inset-4 rounded-[16px] overflow-hidden border border-gray-200 dark:border-gray-700 z-0">
-              <MapContainer
+          <div className="flex-1 relative bg-slate-50 dark:bg-slate-900/50">
+             <MapContainer
                 center={[39.8283, -98.5795]}
-                zoom={4.5}
+                zoom={4}
                 style={{ height: "100%", width: "100%", zIndex: 0 }}
                 zoomControl={false}
                 attributionControl={false}
               >
-                <TileLayer
-                  url="https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png"
-                />
+                <TileLayer url="https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png" />
                 {mockMapMarkers.map(route => (
                   <Marker
                     key={route.id}
@@ -141,284 +186,192 @@ export function DashboardPage() {
                   />
                 ))}
               </MapContainer>
-            </div>
 
-            {/* Bottom Overlay Stats */}
-            <div className="absolute bottom-8 left-8 bg-white/95 dark:bg-[#1E293B]/95 backdrop-blur-sm rounded-2xl shadow-xl p-5 flex items-center gap-8 z-10 border border-gray-100 dark:border-gray-700">
-              <div className="text-center">
-                <p className="text-3xl font-black text-gray-900 dark:text-white">156</p>
-                <p className="text-[10px] text-gray-500 font-bold uppercase tracking-widest mt-1">Total Vehicles</p>
+              <div className="absolute bottom-10 left-10 bg-white/90 dark:bg-slate-800/90 backdrop-blur-md border border-gray-100 dark:border-white/10 rounded-3xl p-6 flex items-center gap-10 z-10 shadow-2xl">
+                 <div className="text-center">
+                    <p className="text-4xl font-black text-gray-900 dark:text-white tracking-tighter">{statsLoading ? "..." : (stats?.activeVehicles || 0) + 12}</p>
+                    <p className="text-[9px] text-gray-500 dark:text-slate-400 font-black uppercase tracking-[0.2em] mt-1">{t('dashboard.terminal.fleets')}</p>
+                 </div>
+                 <div className="w-[1px] h-12 bg-gray-200 dark:bg-white/10"></div>
+                 <div className="text-center">
+                    <p className="text-4xl font-black text-emerald-500 tracking-tighter">{statsLoading ? "..." : (stats?.activeVehicles || 0)}</p>
+                    <p className="text-[9px] text-gray-500 dark:text-slate-400 font-black uppercase tracking-[0.2em] mt-1">{t('dashboard.terminal.idle')}</p>
+                 </div>
               </div>
-              <div className="w-[2px] h-12 bg-gray-100 dark:bg-gray-800"></div>
-              <div className="text-center">
-                <p className="text-3xl font-black text-[#10B981]">89</p>
-                <p className="text-[10px] text-gray-500 font-bold uppercase tracking-widest mt-1">Available</p>
-              </div>
-              <div className="w-[2px] h-12 bg-gray-100 dark:bg-gray-800"></div>
-              <div className="text-center">
-                <p className="text-3xl font-black text-[#3B82F6]">247</p>
-                <p className="text-[10px] text-gray-500 font-bold uppercase tracking-widest mt-1">Active Loads</p>
-              </div>
-            </div>
-
-            {/* Legend */}
-            <div className="absolute top-8 right-8 bg-white/95 dark:bg-[#1E293B]/95 backdrop-blur-sm rounded-xl shadow-lg p-4 z-10 border border-gray-100 dark:border-gray-700 min-w-[140px]">
-              <p className="text-[11px] font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400 mb-3">Vehicle Status</p>
-              <div className="space-y-3">
-                <div className="flex items-center gap-2.5">
-                  <div className="w-2.5 h-2.5 rounded-full bg-[#10B981] shadow-sm"></div>
-                  <span className="text-sm font-bold text-gray-700 dark:text-gray-300">On Time</span>
-                </div>
-                <div className="flex items-center gap-2.5">
-                  <div className="w-2.5 h-2.5 rounded-full bg-[#F59E0B] shadow-sm"></div>
-                  <span className="text-sm font-bold text-gray-700 dark:text-gray-300">Delayed</span>
-                </div>
-                <div className="flex items-center gap-2.5">
-                  <div className="w-2.5 h-2.5 rounded-full bg-[#EF4444] shadow-sm"></div>
-                  <span className="text-sm font-bold text-gray-700 dark:text-gray-300">Critical</span>
-                </div>
-              </div>
-            </div>
           </div>
         </div>
 
-        {/* Today's Dispatch (col-span-1) */}
-        <div className="bg-white dark:bg-[#1E293B] rounded-[20px] shadow-sm border border-gray-100 dark:border-gray-800 flex flex-col">
-          <div className="px-6 py-5 border-b border-gray-100 dark:border-gray-800 flex items-center justify-between">
-            <h2 className="text-lg font-black tracking-tight text-gray-900 dark:text-white">Today's Dispatch</h2>
-            <button className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors focus:outline-none"><MoreHorizontal size={20} /></button>
+        {/* Dispatch List */}
+        <div className="bg-white/80 dark:bg-slate-900/80 backdrop-blur-md rounded-[32px] border border-gray-100 dark:border-white/10 flex flex-col overflow-hidden">
+          <div className="px-8 py-6 border-b border-gray-100 dark:border-white/10 flex items-center justify-between">
+            <h2 className="text-xl font-black tracking-tighter text-gray-900 dark:text-white">{t('dashboard.active_dispatch')}</h2>
+            <button className="text-gray-400 hover:text-white transition-colors"><MoreHorizontal size={20} /></button>
           </div>
-          <div className="p-4 space-y-3 overflow-y-auto" style={{ maxHeight: '550px' }}>
-            {dispatchData.map((d, idx) => (
-              <div key={idx} className="bg-[#F8FAFC] dark:bg-gray-800/40 rounded-xl p-4 flex items-center justify-between border border-transparent hover:border-blue-100 dark:hover:border-blue-900/50 transition-colors">
-                <div>
-                  <p className="text-sm font-black text-gray-900 dark:text-white">{d.id}</p>
-                  <p className="text-[12px] font-medium text-gray-500 mt-1">{d.route}</p>
-                  <p className="text-[12px] font-medium text-gray-400 mt-0.5">Driver: {d.driver}</p>
+          <div className="p-4 space-y-3 overflow-y-auto flex-1 custom-scrollbar">
+            {loadsLoading ? (
+              <div className="flex items-center justify-center h-40">
+                <div className="w-6 h-6 border-2 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
+              </div>
+            ) : loads?.slice(0, 10).map((d: any, idx: number) => (
+              <div key={idx} className="bg-white/10 dark:bg-slate-800/40 border border-white/5 hover:border-blue-500/30 rounded-2xl p-4 transition-all duration-300 group">
+                <div className="flex justify-between items-start">
+                  <div>
+                    <p className="text-[14px] font-black text-gray-900 dark:text-white group-hover:text-blue-400 transition-colors uppercase tracking-tight">{d.loadId}</p>
+                    <p className="text-[12px] font-bold text-gray-400 dark:text-slate-400 mt-1">{d.origin_city} ➔ {d.dest_city}</p>
+                  </div>
+                  <span className={`px-2.5 py-1 rounded-lg text-[9px] font-black uppercase tracking-widest ${
+                    d.status === 'PENDING' ? 'bg-gray-500/10 text-gray-500' :
+                    d.status === 'ASSIGNED' ? 'bg-blue-500/10 text-blue-500' :
+                    'bg-emerald-500/10 text-emerald-500'
+                  }`}>
+                    {d.status}
+                  </span>
                 </div>
-                <span className={`px-3 py-1.5 rounded-lg text-[11px] font-bold whitespace-nowrap ${d.sf}`}>
-                  {d.status}
-                </span>
               </div>
             ))}
           </div>
         </div>
       </div>
 
-      {/* Bottom Grid Row */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Alerts & Exceptions */}
-        <div className="lg:col-span-2 bg-white dark:bg-[#1E293B] rounded-[20px] shadow-sm border border-gray-100 dark:border-gray-800">
-          <div className="px-6 py-5 border-b border-gray-100 dark:border-gray-800">
-            <h2 className="text-lg font-black tracking-tight text-gray-900 dark:text-white">Alerts & Exceptions</h2>
-          </div>
-          <div className="p-5 grid grid-rows-4 gap-3">
-            {/* Red Alert */}
-            <div className="bg-red-50/50 dark:bg-red-500/5 border border-red-100 dark:border-red-500/20 rounded-[14px] p-4 flex gap-4 cursor-pointer hover:bg-red-50 dark:hover:bg-red-500/10 transition-colors">
-              <div className="mt-0.5"><Clock className="text-red-500" size={20} /></div>
-              <div>
-                <p className="text-[13px] font-bold text-red-700 dark:text-red-400 leading-none">Late Pickup Alert</p>
-                <p className="text-[13px] font-medium text-gray-600 dark:text-gray-400 mt-1.5">Load LD-2024-001845 is 2 hours behind schedule</p>
-                <p className="text-[12px] font-semibold text-gray-500 dark:text-gray-500 mt-1">Customer: Walmart Distribution • ETA: 14:30</p>
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 pb-6">
+        {/* Alerts */}
+        <div className="lg:col-span-2 bg-white/80 dark:bg-slate-900/80 backdrop-blur-md rounded-[32px] p-8 border border-gray-100 dark:border-white/10">
+           <h2 className="text-xl font-black tracking-tighter text-gray-900 dark:text-white mb-6">{t('dashboard.health.title')}</h2>
+           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="bg-red-500/10 border border-red-500/20 rounded-2xl p-5 flex gap-4">
+                 <div className="w-10 h-10 rounded-xl bg-red-500 flex items-center justify-center text-white flex-shrink-0"><Clock size={20}/></div>
+                 <div>
+                    <p className="text-sm font-black text-red-500 uppercase tracking-wide">{t('dashboard.health.critical_delay')}</p>
+                    <p className="text-[12px] text-gray-600 dark:text-gray-200 mt-1 font-bold">{t('dashboard.health.critical_delay_msg')}</p>
+                 </div>
               </div>
-            </div>
-            {/* Orange Alert */}
-            <div className="bg-orange-50/50 dark:bg-orange-500/5 border border-orange-100 dark:border-orange-500/20 rounded-[14px] p-4 flex gap-4 cursor-pointer hover:bg-orange-50 dark:hover:bg-orange-500/10 transition-colors">
-              <div className="mt-0.5"><AlertCircle className="text-orange-500" size={20} /></div>
-              <div>
-                <p className="text-[13px] font-bold text-orange-700 dark:text-orange-400 leading-none">HOS Risk Warning</p>
-                <p className="text-[13px] font-medium text-gray-600 dark:text-gray-400 mt-1.5">Driver Mike Rodriguez approaching 11-hour limit</p>
-                <p className="text-[12px] font-semibold text-gray-500 dark:text-gray-500 mt-1">Truck: FL-4892 • Time remaining: 1h 23m</p>
+              <div className="bg-orange-500/10 border border-orange-500/20 rounded-2xl p-5 flex gap-4">
+                 <div className="w-10 h-10 rounded-xl bg-orange-500 flex items-center justify-center text-white flex-shrink-0"><AlertCircle size={20}/></div>
+                 <div>
+                    <p className="text-sm font-black text-orange-500 uppercase tracking-wide">{t('dashboard.health.hos_compliance')}</p>
+                    <p className="text-[12px] text-gray-600 dark:text-gray-200 mt-1 font-bold">{t('dashboard.health.hos_compliance_msg')}</p>
+                 </div>
               </div>
-            </div>
-            {/* Blue Alert */}
-            <div className="bg-blue-50/50 dark:bg-blue-500/5 border border-blue-100 dark:border-blue-500/20 rounded-[14px] p-4 flex gap-4 cursor-pointer hover:bg-blue-50 dark:hover:bg-blue-500/10 transition-colors">
-              <div className="mt-0.5"><ThermometerSnowflake className="text-blue-500" size={20} /></div>
-              <div>
-                <p className="text-[13px] font-bold text-blue-700 dark:text-blue-400 leading-none">Temperature Alert</p>
-                <p className="text-[13px] font-medium text-gray-600 dark:text-gray-400 mt-1.5">Reefer unit temperature out of range (-18°C to -20°C)</p>
-                <p className="text-[12px] font-semibold text-gray-500 dark:text-gray-500 mt-1">Load: LD-2024-001843 • Current: -15°C</p>
-              </div>
-            </div>
-            {/* Yellow Alert */}
-            <div className="bg-yellow-50/50 dark:bg-yellow-500/5 border border-yellow-100 dark:border-yellow-500/20 rounded-[14px] p-4 flex gap-4 cursor-pointer hover:bg-yellow-50 dark:hover:bg-yellow-500/10 transition-colors">
-              <div className="mt-0.5"><FileWarning className="text-yellow-600 dark:text-yellow-500" size={20} /></div>
-              <div>
-                <p className="text-[13px] font-bold text-yellow-700 dark:text-yellow-500 leading-none">Unpaid Invoice</p>
-                <p className="text-[13px] font-medium text-gray-600 dark:text-gray-400 mt-1.5">Invoice INV-2024-0892 overdue by 15 days</p>
-                <p className="text-[12px] font-semibold text-gray-500 dark:text-gray-500 mt-1">Customer: Target Corp • Amount: $4,250.00</p>
-              </div>
-            </div>
-          </div>
+           </div>
         </div>
 
         {/* Quick Actions */}
-        <div className="bg-white dark:bg-[#1E293B] rounded-[20px] shadow-sm border border-gray-100 dark:border-gray-800 flex flex-col">
-          <div className="px-6 py-5 border-b border-gray-100 dark:border-gray-800">
-            <h2 className="text-lg font-black tracking-tight text-gray-900 dark:text-white">Quick Actions</h2>
-          </div>
-          <div className="p-5 grid grid-cols-2 gap-4 flex-1">
-            {/* + Create Load Dialog */}
-            <Dialog>
-              <DialogTrigger asChild>
-                <button className="bg-[#3B82F6] hover:bg-[#2563EB] text-white rounded-2xl flex flex-col items-center justify-center gap-3 transition-colors shadow-sm focus:outline-none p-6">
-                  <Plus size={28} />
-                  <span className="text-[13px] font-bold truncate tracking-wide">+ Create Load</span>
-                </button>
-              </DialogTrigger>
-              <DialogContent className="sm:max-w-[550px]">
-                <DialogHeader>
-                  <DialogTitle className="text-xl">+ Create New Load</DialogTitle>
-                </DialogHeader>
-                <div className="grid gap-4 py-4">
-                  <div className="grid grid-cols-2 gap-4">
-                    <div className="grid gap-2">
-                      <label className="text-sm font-semibold text-gray-700 dark:text-gray-300">Customer</label>
-                      <input placeholder="Enter customer name" className="px-3 py-2.5 bg-gray-50 dark:bg-[#1E293B] border border-gray-200 dark:border-gray-700 rounded-lg text-sm text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500" />
-                    </div>
-                    <div className="grid gap-2">
-                      <label className="text-sm font-semibold text-gray-700 dark:text-gray-300">Load Type</label>
-                      <select className="px-3 py-2.5 bg-gray-50 dark:bg-[#1E293B] border border-gray-200 dark:border-gray-700 rounded-lg text-sm text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500">
-                        <option>Dry Van</option>
-                        <option>Reefer</option>
-                        <option>Flatbed</option>
-                      </select>
+        <div className="bg-white/80 dark:bg-slate-900/80 backdrop-blur-md rounded-[32px] p-8 border border-gray-100 dark:border-white/10 flex flex-col">
+           <h2 className="text-xl font-black tracking-tighter text-gray-900 dark:text-white mb-6">{t('dashboard.quick_command.title')}</h2>
+           <div className="grid grid-cols-2 gap-4 flex-1">
+               <Dialog>
+                <DialogTrigger asChild>
+                  <button className="bg-blue-600 dark:bg-blue-500 hover:scale-[1.02] active:scale-[0.98] text-white rounded-3xl flex flex-col items-center justify-center gap-3 transition-all p-6 shadow-xl shadow-blue-500/20">
+                    <Plus size={32} />
+                    <span className="text-[11px] font-black uppercase tracking-widest">{t('dashboard.quick_command.create_load')}</span>
+                  </button>
+                </DialogTrigger>
+                <DialogContent className="sm:max-w-[500px] dark:bg-slate-900 border-white/20">
+                  <DialogHeader>
+                    <DialogTitle className="text-2xl font-black tracking-tighter">{t('dashboard.modals.init_shipment')}</DialogTitle>
+                  </DialogHeader>
+                  <div className="grid gap-6 py-8">
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                        <label className="text-[10px] font-black uppercase tracking-[0.2em] text-gray-400">{t('dashboard.modals.customer')}</label>
+                        <input className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-blue-500 outline-none transition-all" onChange={(e) => setNewLoadData({...newLoadData, customer: e.target.value})} />
+                      </div>
+                      <div className="space-y-2">
+                        <label className="text-[10px] font-black uppercase tracking-[0.2em] text-gray-400">{t('dashboard.modals.rate')}</label>
+                        <input type="number" className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-blue-500 outline-none transition-all" onChange={(e) => setNewLoadData({...newLoadData, price: Number(e.target.value)})} />
+                      </div>
                     </div>
                   </div>
-                  <div className="grid grid-cols-2 gap-4">
-                    <div className="grid gap-2">
-                      <label className="text-sm font-semibold text-gray-700 dark:text-gray-300">Origin</label>
-                      <input placeholder="City, State" className="px-3 py-2.5 bg-gray-50 dark:bg-[#1E293B] border border-gray-200 dark:border-gray-700 rounded-lg text-sm text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500" />
-                    </div>
-                    <div className="grid gap-2">
-                      <label className="text-sm font-semibold text-gray-700 dark:text-gray-300">Destination</label>
-                      <input placeholder="City, State" className="px-3 py-2.5 bg-gray-50 dark:bg-[#1E293B] border border-gray-200 dark:border-gray-700 rounded-lg text-sm text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500" />
-                    </div>
-                  </div>
-                </div>
-                <DialogFooter className="mt-2 text-right flex justify-end">
-                  <DialogClose asChild>
-                    <button className="px-5 py-2.5 bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors text-sm font-semibold border border-gray-200 dark:border-gray-700 shadow-sm mr-2">Cancel</button>
-                  </DialogClose>
-                  <button className="px-5 py-2.5 bg-[#2563EB] text-white rounded-lg hover:bg-[#1d4ed8] transition-colors text-sm font-semibold shadow-sm">Save Load</button>
-                </DialogFooter>
-              </DialogContent>
-            </Dialog>
-
-            {/* Assign Driver Dialog */}
-            <Dialog>
-              <DialogTrigger asChild>
-                <button className="bg-[#10B981] hover:bg-[#059669] text-white rounded-2xl flex flex-col items-center justify-center gap-3 transition-colors shadow-sm focus:outline-none p-6">
-                  <UserPlus size={28} />
-                  <span className="text-[13px] font-bold truncate tracking-wide">Assign Driver</span>
-                </button>
-              </DialogTrigger>
-              <DialogContent className="sm:max-w-[425px]">
-                <DialogHeader>
-                  <DialogTitle className="text-xl">Assign Driver to Load</DialogTitle>
-                </DialogHeader>
-                <div className="grid gap-4 py-4">
-                  <div className="grid gap-2">
-                    <label className="text-sm font-semibold text-gray-700 dark:text-gray-300">Select Load</label>
-                    <select className="px-3 py-2.5 bg-gray-50 dark:bg-[#1E293B] border border-gray-200 dark:border-gray-700 rounded-lg text-sm text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-green-500">
-                      <option>LD-2024-001851 (Houston → New Orleans)</option>
-                      <option>LD-2024-001860 (Chicago → Detroit)</option>
-                    </select>
-                  </div>
-                  <div className="grid gap-2">
-                    <label className="text-sm font-semibold text-gray-700 dark:text-gray-300">Select Driver</label>
-                    <select className="px-3 py-2.5 bg-gray-50 dark:bg-[#1E293B] border border-gray-200 dark:border-gray-700 rounded-lg text-sm text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-green-500">
-                      <option>Robert Wilson (Available)</option>
-                      <option>Tom Hardy (Available)</option>
-                    </select>
-                  </div>
-                </div>
-                <DialogFooter className="mt-2 text-right flex justify-end">
-                  <DialogClose asChild>
-                    <button className="px-5 py-2.5 bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors text-sm font-semibold border border-gray-200 dark:border-gray-700 shadow-sm mr-2">Cancel</button>
-                  </DialogClose>
-                  <button className="px-5 py-2.5 bg-[#10B981] text-white rounded-lg hover:bg-[#059669] transition-colors text-sm font-semibold shadow-sm">Assign</button>
-                </DialogFooter>
-              </DialogContent>
-            </Dialog>
-
-            {/* Generate Invoice Dialog */}
-            <Dialog>
-              <DialogTrigger asChild>
-                <button className="bg-[#A855F7] hover:bg-[#9333EA] text-white rounded-2xl flex flex-col items-center justify-center gap-3 transition-colors shadow-sm focus:outline-none p-6">
-                  <FileText size={28} />
-                  <span className="text-[13px] font-bold truncate tracking-wide">Generate Invoice</span>
-                </button>
-              </DialogTrigger>
-              <DialogContent className="sm:max-w-[425px]">
-                <DialogHeader>
-                  <DialogTitle className="text-xl">Generate Invoice</DialogTitle>
-                </DialogHeader>
-                <div className="grid gap-4 py-4">
-                  <div className="grid gap-2">
-                    <label className="text-sm font-semibold text-gray-700 dark:text-gray-300">Completed Load</label>
-                    <select className="px-3 py-2.5 bg-gray-50 dark:bg-[#1E293B] border border-gray-200 dark:border-gray-700 rounded-lg text-sm text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-purple-500">
-                      <option>LD-2024-001850 (Miami → Jacksonville)</option>
-                    </select>
-                  </div>
-                  <div className="grid gap-2">
-                    <label className="text-sm font-semibold text-gray-700 dark:text-gray-300">Amount ($)</label>
-                    <input type="number" defaultValue="2500.00" className="px-3 py-2.5 bg-gray-50 dark:bg-[#1E293B] border border-gray-200 dark:border-gray-700 rounded-lg text-sm text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-purple-500" />
-                  </div>
-                </div>
-                <DialogFooter className="mt-2 text-right flex justify-end">
-                  <DialogClose asChild>
-                    <button className="px-5 py-2.5 bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors text-sm font-semibold border border-gray-200 dark:border-gray-700 shadow-sm mr-2">Cancel</button>
-                  </DialogClose>
-                  <button className="px-5 py-2.5 bg-[#A855F7] text-white rounded-lg hover:bg-[#9333EA] transition-colors text-sm font-semibold shadow-sm">Create Invoice</button>
-                </DialogFooter>
-              </DialogContent>
-            </Dialog>
-
-            {/* Plan Route Dialog */}
-            <Dialog>
-              <DialogTrigger asChild>
-                <button className="bg-[#F97316] hover:bg-[#EA580C] text-white rounded-2xl flex flex-col items-center justify-center gap-3 transition-colors shadow-sm focus:outline-none p-6">
-                  <MapIcon size={28} />
-                  <span className="text-[13px] font-bold truncate tracking-wide">Plan Route</span>
-                </button>
-              </DialogTrigger>
-              <DialogContent className="sm:max-w-[425px]">
-                <DialogHeader>
-                  <DialogTitle className="text-xl">Plan Route</DialogTitle>
-                </DialogHeader>
-                <div className="grid gap-4 py-4">
-                  <div className="grid gap-2">
-                    <label className="text-sm font-semibold text-gray-700 dark:text-gray-300">Vehicle / Driver</label>
-                    <select className="px-3 py-2.5 bg-gray-50 dark:bg-[#1E293B] border border-gray-200 dark:border-gray-700 rounded-lg text-sm text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-orange-500">
-                      <option>TX-7841 / Mike Rodriguez</option>
-                      <option>FL-4892 / Jennifer Chen</option>
-                    </select>
-                  </div>
-                  <div className="flex gap-4">
-                    <div className="grid gap-2 w-full">
-                      <label className="text-sm font-semibold text-gray-700 dark:text-gray-300">Start Location</label>
-                      <input placeholder="Chicago, IL" className="px-3 py-2.5 bg-gray-50 dark:bg-[#1E293B] border border-gray-200 dark:border-gray-700 rounded-lg text-sm text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-orange-500" />
-                    </div>
-                  </div>
-                  <div className="flex gap-4">
-                    <div className="grid gap-2 w-full">
-                      <label className="text-sm font-semibold text-gray-700 dark:text-gray-300">End Location</label>
-                      <input placeholder="Atlanta, GA" className="px-3 py-2.5 bg-gray-50 dark:bg-[#1E293B] border border-gray-200 dark:border-gray-700 rounded-lg text-sm text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-orange-500" />
-                    </div>
-                  </div>
-                </div>
-                <DialogFooter className="mt-2 text-right flex justify-end">
-                  <DialogClose asChild>
-                    <button className="px-5 py-2.5 bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors text-sm font-semibold border border-gray-200 dark:border-gray-700 shadow-sm mr-2">Cancel</button>
-                  </DialogClose>
-                  <button className="px-5 py-2.5 bg-[#F97316] text-white rounded-lg hover:bg-[#EA580C] transition-colors text-sm font-semibold shadow-sm">Optimize Route</button>
-                </DialogFooter>
-              </DialogContent>
-            </Dialog>
-          </div>
+                  <DialogFooter>
+                    <DialogClose asChild>
+                      <button className="w-full py-4 bg-blue-600 text-white rounded-2xl font-black uppercase tracking-widest text-xs hover:bg-blue-700 transition-colors" onClick={() => createLoadMutation.mutate(newLoadData)}>{t('dashboard.modals.finalize')}</button>
+                    </DialogClose>
+                  </DialogFooter>
+                </DialogContent>
+              </Dialog>
+              <button disabled className="bg-gray-100 dark:bg-white/5 border border-gray-200 dark:border-white/5 text-gray-400 rounded-3xl flex flex-col items-center justify-center gap-3 transition-all cursor-not-allowed">
+                 <Truck size={32} />
+                 <span className="text-[11px] font-black uppercase tracking-widest">{t('dashboard.quick_command.auto_dispatch')}</span>
+              </button>
+           </div>
         </div>
       </div>
+
+      {/* Alerts Dialog */}
+      <Dialog open={showAlertsDialog} onOpenChange={setShowAlertsDialog}>
+        <DialogContent className="sm:max-w-[500px] bg-white dark:bg-[#1E293B] border-gray-200 dark:border-gray-800 rounded-3xl p-0 overflow-hidden">
+          <DialogHeader className="p-8 pb-0">
+            <DialogTitle className="text-2xl font-black tracking-tighter text-gray-900 dark:text-white flex items-center gap-3">
+              <div className="w-10 h-10 rounded-2xl bg-red-500/10 flex items-center justify-center">
+                <AlertTriangle size={20} className="text-red-500" />
+              </div>
+              {t('dashboard.kpis.alerts')}
+            </DialogTitle>
+          </DialogHeader>
+          
+          <div className="p-8 pt-6 max-h-[60vh] overflow-y-auto custom-scrollbar">
+            {notificationsLoading ? (
+              <div className="flex flex-col items-center justify-center py-12 gap-4">
+                <div className="w-8 h-8 border-2 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
+                <p className="text-sm font-bold text-gray-400 uppercase tracking-widest">{t('common.loading')}</p>
+              </div>
+            ) : notifications && notifications.length > 0 ? (
+              <div className="space-y-4">
+                {notifications.map((notif: any) => (
+                  <div 
+                    key={notif.id}
+                    className={`p-4 rounded-2xl border transition-all duration-300 ${
+                      notif.type === 'ERROR' ? 'bg-red-500/5 border-red-500/10 hover:border-red-500/20' :
+                      notif.type === 'WARNING' ? 'bg-orange-500/5 border-orange-500/10 hover:border-orange-500/20' :
+                      'bg-blue-500/5 border-blue-500/10 hover:border-blue-500/20'
+                    }`}
+                  >
+                    <div className="flex gap-4">
+                      <div className={`w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 ${
+                        notif.type === 'ERROR' ? 'bg-red-500 text-white shadow-lg shadow-red-500/20' :
+                        notif.type === 'WARNING' ? 'bg-orange-500 text-white shadow-lg shadow-orange-500/20' :
+                        'bg-blue-500 text-white shadow-lg shadow-blue-500/20'
+                      }`}>
+                        {notif.type === 'ERROR' ? <Clock size={20} /> : 
+                         notif.type === 'WARNING' ? <AlertCircle size={20} /> : <TrendingUp size={20} />}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <div className="flex justify-between items-start gap-2">
+                          <p className={`text-sm font-black uppercase tracking-tight truncate ${
+                            notif.type === 'ERROR' ? 'text-red-600 dark:text-red-400' :
+                            notif.type === 'WARNING' ? 'text-orange-600 dark:text-orange-400' :
+                            'text-blue-600 dark:text-blue-400'
+                          }`}>
+                            {notif.title}
+                          </p>
+                          <span className="text-[10px] font-bold text-gray-400 whitespace-nowrap">
+                            {formatDistanceToNow(new Date(notif.created_at), { addSuffix: true, locale: i18n.language === 'uz' ? uz : enUS })}
+                          </span>
+                        </div>
+                        <p className="text-[12px] font-bold text-gray-600 dark:text-gray-300 mt-1 leading-relaxed">
+                          {notif.message}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="text-center py-20 bg-gray-50 dark:bg-slate-900/50 rounded-3xl border border-dashed border-gray-200 dark:border-white/10">
+                <p className="text-sm font-bold text-gray-500 uppercase tracking-widest">{t('header.no_notifications')}</p>
+              </div>
+            )}
+          </div>
+          
+          <div className="p-8 pt-0">
+            <DialogClose asChild>
+              <button className="w-full py-4 bg-gray-100 dark:bg-white/5 border border-gray-200 dark:border-white/10 rounded-2xl text-[11px] font-black uppercase tracking-[0.2em] text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-white/10 transition-all">
+                {t('common.done')}
+              </button>
+            </DialogClose>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
