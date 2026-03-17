@@ -105,13 +105,24 @@ export function DashboardPage() {
   });
 
   const [showAlertsDialog, setShowAlertsDialog] = useState(false);
-  const [newLoadData, setNewLoadData] = useState({
+  const [newLoadData, setNewLoadData] = useState<any>({
     customer: '',
     origin: { city: '', state: '', location: 'Main Hub' },
     destination: { city: '', state: '', location: 'Main DC' },
-    eta: '2024-03-20',
-    price: 1500
+    eta: new Date().toISOString().split('T')[0],
+    price: 1500,
+    cargo_type: 'General'
   });
+
+  const cargoCategories = [
+    { id: 'General', label: 'Umumiy yuklar' },
+    { id: 'Food', label: 'Oziq-ovqat' },
+    { id: 'Equipment', label: 'Texnika/Uskunalar' },
+    { id: 'Construction', label: 'Qurilish mollari' },
+    { id: 'Chemicals', label: 'Kimyoviy moddalar' },
+    { id: 'Textile', label: 'To\'qimachilik' },
+    { id: 'Other', label: 'Boshqa' }
+  ];
 
   const createLoadMutation = useMutation({
     mutationFn: (load: any) => axios.post('/api/loads', load),
@@ -266,29 +277,61 @@ export function DashboardPage() {
                     <span className="text-[11px] font-black uppercase tracking-widest">{t('dashboard.quick_command.create_load')}</span>
                   </button>
                 </DialogTrigger>
-                <DialogContent className="sm:max-w-[500px] dark:bg-slate-900 border-white/20">
+                <DialogContent className="sm:max-w-[600px] max-h-[90vh] overflow-y-auto dark:bg-slate-900 border-white/20">
                   <DialogHeader>
                     <DialogTitle className="text-2xl font-black tracking-tighter">{t('dashboard.modals.init_shipment')}</DialogTitle>
                   </DialogHeader>
-                  <div className="grid gap-6 py-8">
+                  <div className="grid gap-6 py-4">
                     <div className="grid grid-cols-2 gap-4">
                       <div className="space-y-2">
                         <label className="text-[10px] font-black uppercase tracking-[0.2em] text-gray-400">{t('dashboard.modals.customer')}</label>
-                        <input className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-blue-500 outline-none transition-all" onChange={(e) => setNewLoadData({...newLoadData, customer: e.target.value})} />
+                        <input className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-blue-500 outline-none transition-all text-white" placeholder="Mijoz nomi" onChange={(e) => setNewLoadData({...newLoadData, customer: e.target.value})} />
+                      </div>
+                      <div className="space-y-2">
+                        <label className="text-[10px] font-black uppercase tracking-[0.2em] text-gray-400">Yuk turi</label>
+                        <select className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-blue-500 outline-none transition-all text-white" onChange={(e) => setNewLoadData({...newLoadData, cargo_type: e.target.value})}>
+                          {cargoCategories.map(cat => (
+                            <option key={cat.id} value={cat.id} className="bg-slate-900">{cat.label}</option>
+                          ))}
+                        </select>
+                      </div>
+                    </div>
+
+                    <div className="space-y-4 p-4 bg-white/5 rounded-xl border border-white/5">
+                      <h3 className="text-[10px] font-black uppercase tracking-[0.2em] text-blue-400">Yuborish (Origin)</h3>
+                      <div className="grid grid-cols-2 gap-4">
+                        <input placeholder="Shahar" className="bg-white/5 border border-white/10 rounded-xl px-4 py-2 text-sm text-white" onChange={(e) => setNewLoadData({...newLoadData, origin: {...newLoadData.origin, city: e.target.value}})} />
+                        <input placeholder="Shtat/Viloyat" className="bg-white/5 border border-white/10 rounded-xl px-4 py-2 text-sm text-white" onChange={(e) => setNewLoadData({...newLoadData, origin: {...newLoadData.origin, state: e.target.value}})} />
+                      </div>
+                    </div>
+
+                    <div className="space-y-4 p-4 bg-white/5 rounded-xl border border-white/5">
+                      <h3 className="text-[10px] font-black uppercase tracking-[0.2em] text-emerald-400">Qabul qilish (Destination)</h3>
+                      <div className="grid grid-cols-2 gap-4">
+                        <input placeholder="Shahar" className="bg-white/5 border border-white/10 rounded-xl px-4 py-2 text-sm text-white" onChange={(e) => setNewLoadData({...newLoadData, destination: {...newLoadData.destination, city: e.target.value}})} />
+                        <input placeholder="Shtat/Viloyat" className="bg-white/5 border border-white/10 rounded-xl px-4 py-2 text-sm text-white" onChange={(e) => setNewLoadData({...newLoadData, destination: {...newLoadData.destination, state: e.target.value}})} />
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                        <label className="text-[10px] font-black uppercase tracking-[0.2em] text-gray-400">Sana (ETA)</label>
+                        <input type="date" className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-sm text-white" defaultValue={newLoadData.eta} onChange={(e) => setNewLoadData({...newLoadData, eta: e.target.value})} />
                       </div>
                       <div className="space-y-2">
                         <label className="text-[10px] font-black uppercase tracking-[0.2em] text-gray-400">{t('dashboard.modals.rate')}</label>
-                        <input type="number" className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-blue-500 outline-none transition-all" onChange={(e) => setNewLoadData({...newLoadData, price: Number(e.target.value)})} />
+                        <input type="number" placeholder="1500" className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-blue-500 outline-none transition-all text-white" onChange={(e) => setNewLoadData({...newLoadData, price: Number(e.target.value)})} />
                       </div>
                     </div>
                   </div>
                   <DialogFooter>
                     <DialogClose asChild>
-                      <button className="w-full py-4 bg-blue-600 text-white rounded-2xl font-black uppercase tracking-widest text-xs hover:bg-blue-700 transition-colors" onClick={() => createLoadMutation.mutate(newLoadData)}>{t('dashboard.modals.finalize')}</button>
+                      <button className="w-full py-4 bg-blue-600 text-white rounded-2xl font-black uppercase tracking-widest text-xs hover:bg-blue-700 transition-colors shadow-lg active:scale-95" onClick={() => createLoadMutation.mutate(newLoadData)}>{t('dashboard.modals.finalize')}</button>
                     </DialogClose>
                   </DialogFooter>
                 </DialogContent>
               </Dialog>
+
               <button disabled className="bg-gray-100 dark:bg-white/5 border border-gray-200 dark:border-white/5 text-gray-400 rounded-3xl flex flex-col items-center justify-center gap-3 transition-all cursor-not-allowed">
                  <Truck size={32} />
                  <span className="text-[11px] font-black uppercase tracking-widest">{t('dashboard.quick_command.auto_dispatch')}</span>
