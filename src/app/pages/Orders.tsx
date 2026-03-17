@@ -64,7 +64,7 @@ export function OrdersPage() {
   });
 
   const createLoadMutation = useMutation({
-    mutationFn: (load: any) => axios.post('http://localhost:3001/api/loads', load),
+    mutationFn: (load: any) => axios.post('/api/loads', load),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['loads'] });
     }
@@ -72,14 +72,14 @@ export function OrdersPage() {
 
   const exportToExcel = () => {
     const data = filteredLoads.map((load: any) => ({
-      [t('orders.load_id')]: load.id,
+      [t('orders.load_id')]: load.loadId,
       [t('orders.customer')]: load.customer,
-      [t('orders.origin')]: load.origin,
-      [t('orders.destination')]: load.destination,
-      [t('common.status')]: t(`common.${load.status.toLowerCase().replace(' ', '_')}`),
-      [t('orders.driver')]: load.driver || t('orders.unassigned'),
+      [t('orders.origin')]: load.origin_city,
+      [t('orders.destination')]: load.dest_city,
+      [t('common.status')]: load.status,
+      [t('orders.driver')]: load.driver_name || t('orders.unassigned'),
       [t('orders.price')]: load.price,
-      [t('orders.date')]: load.date
+      [t('orders.eta')]: load.eta
     }));
 
     const worksheet = XLSX.utils.json_to_sheet(data);

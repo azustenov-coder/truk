@@ -40,13 +40,13 @@ export function ExpensesPage() {
   const { data: expenses, isLoading } = useQuery({
     queryKey: ['expenses'],
     queryFn: async () => {
-      const res = await axios.get('http://localhost:3001/api/expenses');
+      const res = await axios.get('/api/expenses');
       return res.data;
     }
   });
 
   const createExpenseMutation = useMutation({
-    mutationFn: (newExpense: any) => axios.post('http://localhost:3001/api/expenses', newExpense),
+    mutationFn: (newExpense: any) => axios.post('/api/expenses', newExpense),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['expenses'] });
     }

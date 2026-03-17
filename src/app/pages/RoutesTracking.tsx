@@ -61,7 +61,7 @@ export function RoutesTrackingPage() {
 
   const fetchPositions = async () => {
     try {
-      const response = await axios.get('http://localhost:3001/api/tracking');
+      const response = await axios.get('/api/tracking');
       setPositions(response.data);
       setLoading(false);
     } catch (err) {

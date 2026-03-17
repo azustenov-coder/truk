@@ -77,9 +77,9 @@ const mockMapMarkers = [
   { id: '6', label: 'NY-1847', lat: 43.2994, lng: -74.2179, color: 'orange' },
 ];
 
-const fetchStats = async () => (await axios.get('http://localhost:3001/api/stats')).data;
-const fetchLoads = async () => (await axios.get('http://localhost:3001/api/loads')).data;
-const fetchNotifications = async () => (await axios.get('http://localhost:3001/api/notifications')).data;
+const fetchStats = async () => (await axios.get('/api/stats')).data;
+const fetchLoads = async () => (await axios.get('/api/loads')).data;
+const fetchNotifications = async () => (await axios.get('/api/notifications')).data;
 
 export function DashboardPage() {
   const { t, i18n } = useTranslation();
